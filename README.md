@@ -83,6 +83,15 @@ cd mcp/inova-runtime-mcp && npm install
 
 Recarregue o Cursor — server `inova-runtime-mcp-local` em `.cursor/mcp.json`.
 
+## Onda 5 — Golden run e staging
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/wave5_golden_run.ps1
+docker compose --profile staging up -d webhook-ingress
+```
+
+Documentação: `docs/WAVE5-GOVERNANCE-AND-STAGING.md`
+
 ## Observação de segurança
 
 Portas de infraestrutura local bindam em `127.0.0.1`. Troque credenciais default antes de expor em VPS/produção.

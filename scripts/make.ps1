@@ -44,11 +44,14 @@ switch ($Target) {
   }
   "e2e-orchestrate-audit" { & powershell -ExecutionPolicy Bypass -File scripts/e2e_orchestrate_audit.ps1 }
   "e2e-full-pipeline" { & powershell -ExecutionPolicy Bypass -File scripts/e2e_full_pipeline.ps1 }
+  "wave5-golden-run" { & powershell -ExecutionPolicy Bypass -File scripts/wave5_golden_run.ps1 @args }
+  "apply-branch-protection" { & powershell -ExecutionPolicy Bypass -File scripts/apply_branch_protection.ps1 @args }
   default {
     Write-Host "Alvo desconhecido: $Target"
     Write-Host "Targets: bootstrap, dev, down, logs, test, lint, validate-contracts,"
     Write-Host "  publish-audit, publish-opencode, publish-orchestrate, publish-full-pipeline,"
-    Write-Host "  audit-log, release-check, e2e-orchestrate-audit, e2e-full-pipeline"
+    Write-Host "  audit-log, release-check, e2e-orchestrate-audit, e2e-full-pipeline,"
+    Write-Host "  wave5-golden-run, apply-branch-protection"
     exit 1
   }
 }

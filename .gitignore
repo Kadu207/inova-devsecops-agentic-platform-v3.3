@@ -13,6 +13,7 @@ examples/events/.mcp_orchestrate_payload.json
 mcp/inova-runtime-mcp/node_modules/
 .cursor/memory/*.local.md
 logs/
+reports/
 *.log
 .DS_Store
 Thumbs.db

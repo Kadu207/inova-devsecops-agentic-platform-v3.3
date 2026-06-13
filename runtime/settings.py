@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     sonar_host_url: str = ""
     sonar_token: str = ""
     snyk_token: str = ""
+    webhook_secret: str = ""
+    webhook_listen_host: str = "0.0.0.0"
+    webhook_listen_port: int = 8787
 
     class Config:
         env_file = ".env"

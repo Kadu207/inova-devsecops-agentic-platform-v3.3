@@ -119,6 +119,13 @@ services:
     restart: "no"
     profiles: ["tools"]
 
+  webhook-ingress:
+    <<: *worker_base
+    command: ["python", "-m", "workers.webhook_ingress.main"]
+    ports:
+      - "127.0.0.1:8787:8787"
+    profiles: ["staging"]
+
   opencode:
     image: node:22-bookworm
     working_dir: /workspace

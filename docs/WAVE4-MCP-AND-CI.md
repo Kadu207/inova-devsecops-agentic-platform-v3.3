@@ -73,7 +73,10 @@ powershell -ExecutionPolicy Bypass -File scripts/make.ps1 audit-log
 
 ---
 
-## Próximo passo (Onda 5)
+## Próximo passo (Onda 5 — entregue)
 
-- Golden run: encadear `github-governance-mcp` (branch protection) + required check `orchestrate-devsecops`
-- Webhook externo para NATS em staging (VPS)
+Ver `docs/WAVE5-GOVERNANCE-AND-STAGING.md`:
+
+- Golden run: `scripts/wave5_golden_run.ps1`
+- Branch protection + `github-governance-mcp`
+- Webhook ingress NATS (profile `staging`)

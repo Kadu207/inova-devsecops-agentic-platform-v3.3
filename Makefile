@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: bootstrap bootstrap-ps dev down logs test lint validate-contracts publish-audit publish-opencode publish-orchestrate publish-full-pipeline migrate release-check e2e-orchestrate-audit e2e-full-pipeline audit-log
+.PHONY: bootstrap bootstrap-ps dev down logs test lint validate-contracts publish-audit publish-opencode publish-orchestrate publish-full-pipeline migrate release-check e2e-orchestrate-audit e2e-full-pipeline audit-log wave5-golden-run apply-branch-protection staging-up
 
 bootstrap:
 	python3 -m venv .venv || true
@@ -58,3 +58,12 @@ e2e-orchestrate-audit:
 
 e2e-full-pipeline:
 	bash scripts/e2e_full_pipeline.sh
+
+wave5-golden-run:
+	bash scripts/wave5_golden_run.sh
+
+apply-branch-protection:
+	bash scripts/apply_branch_protection.sh
+
+staging-up:
+	docker compose --profile staging up -d --build webhook-ingress
