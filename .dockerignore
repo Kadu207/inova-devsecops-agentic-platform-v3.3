@@ -1,0 +1,15 @@
+.venv
+.git
+.github
+__pycache__
+.pytest_cache
+.ruff_cache
+.env
+*.md
+docs/
+examples/
+tests/
+.cursor/
+agents/
+skills/
+Inova_*

@@ -1,0 +1,20 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "correlation_id": "orchestrate-full-devsecops-001",
+  "payload": {
+    "pipeline": "full-devsecops",
+    "next_tasks": [
+      "task.audit.requested",
+      "task.opencode.requested",
+      "task.sonar.requested",
+      "task.snyk.requested",
+      "task.datadog.requested",
+      "task.test.requested",
+      "task.build.requested",
+      "task.review.requested",
+      "task.release.requested",
+      "task.notification.requested"
+    ]
+  }
+}

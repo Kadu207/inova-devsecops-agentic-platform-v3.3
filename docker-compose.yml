@@ -1,0 +1,138 @@
+services:
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222", "--store_dir", "/data"]
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: inova_platform
+      POSTGRES_USER: inova
+      POSTGRES_PASSWORD: inova_dev_password_change_me
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inova -d inova_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.11.0
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  minio:
+    image: minio/minio:RELEASE.2024-07-26T20-48-21Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: inova
+      MINIO_ROOT_PASSWORD: inova_minio_dev_change_me
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+
+  worker-base: &worker_base
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    env_file: .env
+    depends_on:
+      nats:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  orchestrator:
+    <<: *worker_base
+    command: ["python", "-m", "workers.orchestrator.main"]
+
+  audit-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.audit_pipeline.main"]
+
+  opencode-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.opencode_executor.main"]
+
+  sonar-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.sonar_worker.main"]
+
+  snyk-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.snyk_worker.main"]
+
+  datadog-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.datadog_worker.main"]
+
+  test-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.test_worker.main"]
+
+  build-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.build_worker.main"]
+
+  review-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.review_worker.main"]
+
+  release-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.release_worker.main"]
+
+  notification-worker:
+    <<: *worker_base
+    command: ["python", "-m", "workers.notification_worker.main"]
+
+  publisher:
+    <<: *worker_base
+    restart: "no"
+    profiles: ["tools"]
+
+  opencode:
+    image: node:22-bookworm
+    working_dir: /workspace
+    command: ["bash", "-lc", "npm install -g opencode-ai || true; tail -f /dev/null"]
+    env_file: .env
+    volumes:
+      - .:/workspace
+      - opencode_cache:/root/.cache
+    profiles: ["opencode"]
+
+volumes:
+  nats_data:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  minio_data:
+  opencode_cache:

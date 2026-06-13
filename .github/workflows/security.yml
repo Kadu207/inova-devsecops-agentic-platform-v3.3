@@ -1,0 +1,19 @@
+name: security
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt pip-audit bandit
+      - run: pip-audit -r requirements.txt
+      - run: bandit -r runtime workers scripts -q
+      - run: pytest -q tests/test_events.py tests/test_contracts.py tests/test_adapters.py

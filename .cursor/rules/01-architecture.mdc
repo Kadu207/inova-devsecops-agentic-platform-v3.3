@@ -1,0 +1,7 @@
+---
+description: Arquitetura Clean/Hexagonal/Event-Driven com contratos versionados
+alwaysApply: true
+---
+# 01-architecture.mdc
+
+Arquitetura obrigatória: Clean Architecture, Hexagonal, Event-Driven, workers desacoplados, adapters para ferramentas externas e contratos de eventos versionados.

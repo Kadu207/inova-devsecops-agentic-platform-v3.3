@@ -1,0 +1,7 @@
+---
+description: Governanca Inova TI - evidencia, testes, LGPD e rastreabilidade
+alwaysApply: true
+---
+# 00-governance.mdc
+
+Todo desenvolvimento deve seguir governança Inova TI: evidência, teste, rastreabilidade, LGPD e arquitetura aprovada. Nunca inventar APIs, tabelas ou endpoints sem registrar ADR e teste.

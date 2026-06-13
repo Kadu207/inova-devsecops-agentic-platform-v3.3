@@ -1,0 +1,11 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "branch": "main",
+  "commit": "local-dev",
+  "correlation_id": "opencode-local-001",
+  "payload": {
+    "prompt": "Audite o projeto e gere melhorias de segurança, testes e arquitetura.",
+    "mode": "audit"
+  }
+}

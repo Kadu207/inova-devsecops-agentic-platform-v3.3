@@ -1,0 +1,9 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "correlation_id": "release-local-001",
+  "payload": {
+    "version": "3.3.1",
+    "channel": "staging"
+  }
+}

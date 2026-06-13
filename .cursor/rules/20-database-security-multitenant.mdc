@@ -1,0 +1,10 @@
+---
+description: Seguranca PostgreSQL multi-tenant e RLS
+globs: database/**,runtime/audit.py
+alwaysApply: false
+---
+# 20-database-security-multitenant.mdc
+
+PostgreSQL deve usar multi-tenant, RLS, TLS, pgAudit, secrets fora do código, migrações versionadas e princípio do menor privilégio.
+
+Role `inova_app` deve ser usada em producao com `app.tenant_id` configurado por conexao.

@@ -1,0 +1,11 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "branch": "main",
+  "commit": "local-dev",
+  "correlation_id": "audit-local-001",
+  "payload": {
+    "requested_by": "cursor",
+    "scope": ["pipeline", "security", "tests", "architecture"]
+  }
+}

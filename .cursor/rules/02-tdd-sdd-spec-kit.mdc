@@ -1,0 +1,10 @@
+---
+description: SDD/TDD com Spec Kit e criterios de aceite
+globs: tests/**,.specify/**
+alwaysApply: false
+---
+# 02-tdd-sdd-spec-kit.mdc
+
+Toda feature começa com especificação, critérios de aceite, testes unitários e testes de integração antes da implementação final.
+
+Use `.specify/memory/constitution.md` como fonte de principios.

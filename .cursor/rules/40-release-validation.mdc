@@ -1,0 +1,10 @@
+---
+description: Gate de release com lint, testes, contratos e security scan
+globs: scripts/release_check.py,.github/workflows/**
+alwaysApply: false
+---
+# 40-release-validation.mdc
+
+Release exige lint, testes, security scan, quality gate, audit log, documentação atualizada, rollback plan e aprovação do Final Approval Agent.
+
+Comando local: `make release-check`.

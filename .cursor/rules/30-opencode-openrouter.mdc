@@ -1,0 +1,10 @@
+---
+description: OpenCode/OpenRouter como worker opcional com secrets externos
+globs: workers/opencode_executor/**,workers/common/adapters.py
+alwaysApply: false
+---
+# 30-opencode-openrouter.mdc
+
+OpenCode/OpenRouter/DeepSeek é executor opcional e deve operar como worker. Nunca gravar chaves no repositório; usar .env, Vault ou secrets do CI.
+
+Modo stub e permitido quando `OPENROUTER_API_KEY` estiver ausente.

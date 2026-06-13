@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EventEnvelope",
+  "type": "object",
+  "required": ["type", "tenant_id", "project", "correlation_id", "payload"],
+  "properties": {
+    "id": { "type": "string" },
+    "type": { "type": "string" },
+    "tenant_id": { "type": "string" },
+    "project": { "type": "string" },
+    "correlation_id": { "type": "string" },
+    "causation_id": { "type": ["string", "null"] },
+    "created_at": { "type": "string" },
+    "attempt": { "type": "integer", "minimum": 0 },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}

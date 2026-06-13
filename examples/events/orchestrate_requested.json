@@ -1,0 +1,13 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "correlation_id": "orchestrate-local-001",
+  "payload": {
+    "pipeline": "default-devsecops",
+    "next_tasks": [
+      "task.audit.requested",
+      "task.test.requested",
+      "task.review.requested"
+    ]
+  }
+}

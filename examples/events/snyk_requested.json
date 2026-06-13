@@ -1,0 +1,9 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "correlation_id": "snyk-local-001",
+  "payload": {
+    "org_id": "",
+    "target": "requirements.txt"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "inova-runtime-mcp-local": {
+      "command": "node",
+      "args": ["mcp/inova-runtime-mcp/src/server.mjs"],
+      "env": {
+        "INOVA_PROJECT_ROOT": "."
+      }
+    }
+  }
+}

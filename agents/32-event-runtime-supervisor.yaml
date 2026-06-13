@@ -1,0 +1,6 @@
+name: Event Runtime Supervisor
+version: 3.3
+responsibility: "Executar tarefa distinta no ciclo agentic Inova TI."
+inputs: [event, specification, repository_context]
+outputs: [findings, evidence, next_event]
+quality_gate: "Não aprovar sem evidência e teste."

@@ -1,0 +1,10 @@
+---
+description: Regras NATS JetStream, workers e audit log
+globs: runtime/**,workers/**,contracts/**
+alwaysApply: false
+---
+# 10-event-driven-workers.mdc
+
+Tarefas assíncronas devem ser publicadas no NATS JetStream. Workers escutam, processam, publicam completed/failed e registram audit log no PostgreSQL.
+
+Orquestrador usa subject dedicado `task.orchestrate.requested` (nunca `task.*`).

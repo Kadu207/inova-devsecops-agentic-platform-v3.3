@@ -1,0 +1,9 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "correlation_id": "datadog-local-001",
+  "payload": {
+    "title": "inova-pipeline-event",
+    "text": "Local datadog worker test event"
+  }
+}

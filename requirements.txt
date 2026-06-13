@@ -1,0 +1,9 @@
+nats-py==2.7.2
+pydantic==2.8.2
+pydantic-settings==2.4.0
+psycopg[binary]==3.2.13
+redis==5.0.8
+httpx==0.27.0
+python-json-logger==2.0.7
+tenacity==8.5.0
+jsonschema==4.23.0

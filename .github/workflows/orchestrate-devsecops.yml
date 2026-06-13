@@ -1,0 +1,60 @@
+name: orchestrate-devsecops
+
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: "Pipeline preset"
+        required: true
+        default: "orchestrate-audit"
+        type: choice
+        options:
+          - orchestrate-audit
+          - full-devsecops
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: orchestrate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: cp .env.example .env
+      - run: ruff check runtime workers scripts tests
+      - run: python scripts/validate_contracts.py
+      - run: pytest -q
+
+  e2e-orchestrate-audit:
+    needs: gates
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.pipeline == 'orchestrate-audit'
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - name: E2E orchestrator + audit
+        run: bash scripts/e2e_orchestrate_audit.sh
+
+  e2e-full-devsecops:
+    needs: gates
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline == 'full-devsecops'
+      || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - name: E2E full DevSecOps pipeline
+        run: bash scripts/e2e_full_pipeline.sh

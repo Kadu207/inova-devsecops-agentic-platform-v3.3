@@ -1,0 +1,9 @@
+{
+  "tenant_id": "inova-ti",
+  "project": "inova-ti-os",
+  "correlation_id": "test-local-001",
+  "payload": {
+    "suite": "unit",
+    "scope": ["runtime", "workers"]
+  }
+}
