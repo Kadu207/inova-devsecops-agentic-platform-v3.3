@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 
@@ -41,7 +41,7 @@ def run(cmd: list[str]) -> None:
     env = os.environ.copy()
     root = str(Path(__file__).resolve().parent.parent)
     env["PYTHONPATH"] = root + os.pathsep + env.get("PYTHONPATH", "")
-    subprocess.run(cmd, check=True, env=env)
+    subprocess.run(cmd, check=True, env=env)  # nosec B603
 
 
 def main() -> int:

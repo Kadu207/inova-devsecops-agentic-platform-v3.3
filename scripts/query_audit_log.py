@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import subprocess  # nosec B404 - ops script invokes trusted local docker compose
+import subprocess  # nosec B404
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -49,25 +49,32 @@ def _print_rows(rows: list[tuple]) -> None:
 def _query_via_psycopg(args: argparse.Namespace) -> list[tuple]:
     import psycopg
 
-    conditions: list[str] = []
-    params: list[object] = []
-    if args.correlation_id:
-        _validate_filter(args.correlation_id, "correlation_id")
-        conditions.append("correlation_id = %s")
-        params.append(args.correlation_id)
-    if args.worker:
-        _validate_filter(args.worker, "worker")
-        conditions.append("worker = %s")
-        params.append(args.worker)
-    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
-    sql = f"""
+    base = """
         SELECT id, worker, event_type, status, correlation_id, created_at
         FROM public.worker_audit_log
-        {where}
-        ORDER BY id DESC
-        LIMIT %s
     """
-    params.append(args.last)
+    params: list[object] = []
+    if args.correlation_id and args.worker:
+        _validate_filter(args.correlation_id, "correlation_id")
+        _validate_filter(args.worker, "worker")
+        sql = (
+            base
+            + " WHERE correlation_id = %s AND worker = %s"
+            + " ORDER BY id DESC LIMIT %s"
+        )
+        params = [args.correlation_id, args.worker, args.last]
+    elif args.correlation_id:
+        _validate_filter(args.correlation_id, "correlation_id")
+        sql = base + " WHERE correlation_id = %s ORDER BY id DESC LIMIT %s"
+        params = [args.correlation_id, args.last]
+    elif args.worker:
+        _validate_filter(args.worker, "worker")
+        sql = base + " WHERE worker = %s ORDER BY id DESC LIMIT %s"
+        params = [args.worker, args.last]
+    else:
+        sql = base + " ORDER BY id DESC LIMIT %s"
+        params = [args.last]
+
     with psycopg.connect(_host_db_url()) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
