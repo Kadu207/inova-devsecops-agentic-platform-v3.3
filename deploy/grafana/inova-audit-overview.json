@@ -1,0 +1,17 @@
+{
+  "title": "Inova Audit Overview",
+  "uid": "inova-audit-overview",
+  "panels": [
+    {
+      "title": "Audit events by worker",
+      "type": "logs",
+      "targets": [
+        {
+          "expr": "{service=\"inova-devsecops-agentic-platform\"}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

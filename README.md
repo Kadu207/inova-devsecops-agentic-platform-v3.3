@@ -92,6 +92,16 @@ docker compose --profile staging up -d webhook-ingress
 
 Documentação: `docs/WAVE5-GOVERNANCE-AND-STAGING.md`
 
+## Onda 6 — Staging integrated, observabilidade e VPS
+
+```powershell
+copy .env.staging.example .env.staging
+docker compose --env-file .env.staging --profile staging up -d --build
+powershell -ExecutionPolicy Bypass -File scripts/deploy-vps.ps1 -Domain staging.seudominio.com
+```
+
+Documentação: `docs/WAVE6-STAGING-OBSERVABILITY-VPS.md`
+
 ## Observação de segurança
 
 Portas de infraestrutura local bindam em `127.0.0.1`. Troque credenciais default antes de expor em VPS/produção.

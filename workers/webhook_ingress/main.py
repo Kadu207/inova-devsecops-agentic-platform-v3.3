@@ -89,14 +89,17 @@ async def run_ingress() -> None:
         loop.call_soon_threadsafe(publish_queue.put_nowait, (subject, event))
 
     class WebhookHandler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
         def log_message(self, fmt: str, *args: Any) -> None:
-            log.info("http", extra={"message": fmt % args})
+            log.info("http_request", extra={"line": fmt % args})
 
         def _json_response(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
             body = json.dumps(payload).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
 

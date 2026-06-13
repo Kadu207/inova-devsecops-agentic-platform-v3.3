@@ -125,6 +125,11 @@ services:
     ports:
       - "127.0.0.1:8787:8787"
     profiles: ["staging"]
+    env_file:
+      - path: .env
+        required: true
+      - path: .env.staging
+        required: false
 
   opencode:
     image: node:22-bookworm

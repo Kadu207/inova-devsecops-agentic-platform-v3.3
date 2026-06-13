@@ -1,0 +1,7 @@
+# VPS — TLS via Caddy (Let's Encrypt)
+# Substitua INOVA_DOMAIN pelo dominio real antes do deploy
+
+{$INOVA_DOMAIN} {
+    encode gzip
+    reverse_proxy webhook-ingress:8787
+}

@@ -50,6 +50,27 @@ def write_audit(
                 "error": str(exc),
             },
         )
+        return
+
+    if settings.observability_datadog_enabled:
+        try:
+            from runtime.observability.datadog import export_audit_entry
+
+            export_audit_entry(
+                worker=worker,
+                event_type=event_type,
+                tenant_id=tenant_id,
+                project=project,
+                correlation_id=correlation_id,
+                status=status,
+                payload=payload,
+                error=error,
+            )
+        except Exception as exc:
+            log.warning(
+                "observability_export_skipped",
+                extra={"worker": worker, "error": str(exc)},
+            )
 
 
 def write_dlq(

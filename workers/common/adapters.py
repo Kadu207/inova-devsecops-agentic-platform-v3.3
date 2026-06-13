@@ -17,6 +17,9 @@ async def _stub(worker_name: str, note: str) -> Dict[str, Any]:
 
 
 async def run_adapter(worker_name: str, event: EventEnvelope) -> Dict[str, Any]:
+    mode = settings.worker_adapter_mode.lower()
+    if mode == "stub":
+        return await _stub(worker_name, f"Forced stub mode for {worker_name}.")
     if worker_name == "audit_pipeline":
         return {
             "mode": "stub",
@@ -91,6 +94,8 @@ async def _opencode_adapter(event: EventEnvelope) -> Dict[str, Any]:
 
 async def _sonar_adapter(event: EventEnvelope) -> Dict[str, Any]:
     if not settings.sonar_token or not settings.sonar_host_url:
+        if settings.worker_adapter_mode.lower() == "integrated":
+            raise RuntimeError("SONAR_HOST_URL e SONAR_TOKEN obrigatorios em modo integrated.")
         return {
             "mode": "stub",
             "provider": "sonarqube",
@@ -117,6 +122,8 @@ async def _sonar_adapter(event: EventEnvelope) -> Dict[str, Any]:
 
 async def _snyk_adapter(event: EventEnvelope) -> Dict[str, Any]:
     if not settings.snyk_token:
+        if settings.worker_adapter_mode.lower() == "integrated":
+            raise RuntimeError("SNYK_TOKEN obrigatorio em modo integrated.")
         return {"mode": "stub", "provider": "snyk", "note": "Configure SNYK_TOKEN."}
     org_id = event.payload.get("org_id", "")
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -141,6 +148,8 @@ async def _snyk_adapter(event: EventEnvelope) -> Dict[str, Any]:
 
 async def _datadog_adapter(event: EventEnvelope) -> Dict[str, Any]:
     if not settings.datadog_api_key:
+        if settings.worker_adapter_mode.lower() == "integrated":
+            raise RuntimeError("DATADOG_API_KEY obrigatorio em modo integrated.")
         return {
             "mode": "stub",
             "provider": "datadog",

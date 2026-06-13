@@ -45,25 +45,32 @@ foreach ($branch in $Branches) {
   } | ConvertTo-Json -Depth 6 -Compress
 
   $tmp = New-TemporaryFile
-  Set-Content -Path $tmp -Value $payload -Encoding utf8NoBOM
+  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText($tmp.FullName, $payload, $utf8NoBom)
 
   try {
-    gh api -X PUT "repos/$Repo/branches/$branch/protection" --input $tmp
-    Write-Host "OK: protecao aplicada em $branch"
-  } catch {
-    $msg = $_.Exception.Message
-    if ($msg -match "403" -or $msg -match "Upgrade to GitHub Pro") {
-      Write-Host ""
-      Write-Host "AVISO: Branch protection em repo privado exige GitHub Pro/Team."
-      Write-Host "Alternativas:"
-      Write-Host "  1. Upgrade do plano GitHub"
-      Write-Host "  2. MCP github-governance-mcp-local (Cursor) quando plano permitir"
-      Write-Host "  3. Confiar nos workflows CI ate upgrade (PRs ainda rodam checks)"
-      exit 2
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $output = gh api -X PUT "repos/$Repo/branches/$branch/protection" --input $tmp.FullName 2>&1
+    $exit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($exit -ne 0) {
+      $text = ($output | Out-String)
+      if ($text -match "403" -or $text -match "Upgrade to GitHub Pro") {
+        Write-Host ""
+        Write-Host "AVISO: Branch protection em repo privado exige GitHub Pro/Team."
+        Write-Host "Alternativas:"
+        Write-Host "  1. Upgrade do plano GitHub"
+        Write-Host "  2. MCP github-governance-mcp-local (Cursor) quando plano permitir"
+        Write-Host "  3. Confiar nos workflows CI ate upgrade (PRs ainda rodam checks)"
+        exit 2
+      }
+      Write-Host $text
+      exit $exit
     }
-    throw
+    Write-Host "OK: protecao aplicada em $branch"
   } finally {
-    Remove-Item -Force $tmp
+    Remove-Item -Force $tmp.FullName
   }
 }
 

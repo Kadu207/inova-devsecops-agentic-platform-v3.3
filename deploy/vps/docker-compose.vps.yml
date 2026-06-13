@@ -1,0 +1,25 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      INOVA_DOMAIN: ${INOVA_DOMAIN:-staging.example.com}
+    volumes:
+      - ./deploy/vps/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      webhook-ingress:
+        condition: service_started
+    profiles: ["vps"]
+
+  webhook-ingress:
+    ports:
+      - "8787:8787"
+
+volumes:
+  caddy_data:
+  caddy_config:
