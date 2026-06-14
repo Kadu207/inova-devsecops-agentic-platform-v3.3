@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     sonar_token: str = ""
     snyk_token: str = ""
     webhook_secret: str = ""
-    webhook_listen_host: str = "0.0.0.0"
+    webhook_listen_host: str = "127.0.0.1"
     webhook_listen_port: int = 8787
     worker_adapter_mode: str = "auto"
     observability_datadog_enabled: bool = False

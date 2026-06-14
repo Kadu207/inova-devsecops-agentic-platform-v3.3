@@ -53,6 +53,8 @@ switch ($Target) {
     docker compose --env-file .env.staging --profile staging up -d --build
   }
   "sonar-scan" { & powershell -ExecutionPolicy Bypass -File scripts/sonar_scan.ps1 @args }
+  "link-sonar-github" { & powershell -ExecutionPolicy Bypass -File scripts/link_sonarcloud_github.ps1 @args }
+  "deploy-vps-hetzner" { & powershell -ExecutionPolicy Bypass -File scripts/deploy-vps-hetzner.ps1 @args }
   default {
     Write-Host "Alvo desconhecido: $Target"
     Write-Host "Targets: bootstrap, dev, down, logs, test, lint, validate-contracts,"
