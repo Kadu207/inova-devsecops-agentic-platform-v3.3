@@ -46,12 +46,19 @@ switch ($Target) {
   "e2e-full-pipeline" { & powershell -ExecutionPolicy Bypass -File scripts/e2e_full_pipeline.ps1 }
   "wave5-golden-run" { & powershell -ExecutionPolicy Bypass -File scripts/wave5_golden_run.ps1 @args }
   "apply-branch-protection" { & powershell -ExecutionPolicy Bypass -File scripts/apply_branch_protection.ps1 @args }
+  "validate-tokens" { & powershell -ExecutionPolicy Bypass -File scripts/validate_tokens.ps1 @args }
+  "staging-up" {
+    & powershell -ExecutionPolicy Bypass -File scripts/validate_tokens.ps1 @args
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    docker compose --env-file .env.staging --profile staging up -d --build
+  }
+  "sonar-scan" { & powershell -ExecutionPolicy Bypass -File scripts/sonar_scan.ps1 @args }
   default {
     Write-Host "Alvo desconhecido: $Target"
     Write-Host "Targets: bootstrap, dev, down, logs, test, lint, validate-contracts,"
     Write-Host "  publish-audit, publish-opencode, publish-orchestrate, publish-full-pipeline,"
     Write-Host "  audit-log, release-check, e2e-orchestrate-audit, e2e-full-pipeline,"
-    Write-Host "  wave5-golden-run, apply-branch-protection"
+    Write-Host "  wave5-golden-run, apply-branch-protection, validate-tokens, staging-up, sonar-scan"
     exit 1
   }
 }

@@ -6,15 +6,41 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
-from runtime.observability.datadog import export_audit_entry, is_enabled  # noqa: E402
-from runtime.settings import settings  # noqa: E402
+
+def _load_staging_env() -> None:
+    staging = ROOT / ".env.staging"
+    if not staging.is_file():
+        return
+    for raw in staging.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ[key.strip()] = value.strip()
+
+
+def _in_docker() -> bool:
+    return Path("/.dockerenv").exists()
+
+
+def _resolve_db_url(url: str) -> str:
+    """No host local, postgres Docker expõe 127.0.0.1:55432."""
+    if _in_docker():
+        return url
+    if "@postgres:5432" in url:
+        return url.replace("@postgres:5432", "@127.0.0.1:55432")
+    return url
 
 
 def _fetch_rows(last: int, correlation_id: str | None) -> list[tuple]:
     import psycopg
+
+    from runtime.settings import settings
 
     params: list[object] = []
     sql = """
@@ -26,14 +52,30 @@ def _fetch_rows(last: int, correlation_id: str | None) -> list[tuple]:
         params.append(correlation_id)
     sql += " ORDER BY id DESC LIMIT %s"
     params.append(last)
-    db_url = os.environ.get("DATABASE_URL", settings.database_url)
-    with psycopg.connect(db_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-            return cur.fetchall()
+    db_url = _resolve_db_url(os.environ.get("DATABASE_URL", settings.database_url))
+    try:
+        with psycopg.connect(db_url) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                return cur.fetchall()
+    except Exception as exc:
+        if os.environ.get("DATABASE_URL") or not (ROOT / ".env.staging").is_file():
+            raise
+        print(
+            "Aviso: conexao local falhou; use dentro do Docker:\n"
+            "  docker compose --env-file .env.staging run --rm publisher "
+            "python scripts/export_audit_log_datadog.py ...",
+            file=sys.stderr,
+        )
+        raise exc
 
 
 def main() -> None:
+    _load_staging_env()
+
+    from runtime.observability.datadog import export_audit_entry, is_enabled
+    from runtime.settings import settings
+
     parser = argparse.ArgumentParser(description="Export audit log rows to Datadog")
     parser.add_argument("--last", type=int, default=50)
     parser.add_argument("--correlation-id")

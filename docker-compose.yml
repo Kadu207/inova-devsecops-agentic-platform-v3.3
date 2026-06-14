@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: inova_platform
       POSTGRES_USER: inova
-      POSTGRES_PASSWORD: inova_dev_password_change_me
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inova_dev_password_change_me}
     ports:
       - "127.0.0.1:55432:5432"
     volumes:
@@ -60,7 +60,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    env_file: .env
+    env_file:
+      - path: .env
+        required: true
+      - path: .env.staging
+        required: false
     depends_on:
       nats:
         condition: service_healthy

@@ -5,7 +5,14 @@
 ```powershell
 copy .env.staging.example .env.staging
 # Preencha SONAR_TOKEN, SNYK_TOKEN, DATADOG_API_KEY
+powershell -ExecutionPolicy Bypass -File scripts/validate_tokens.ps1
 docker compose --env-file .env.staging --profile staging up -d --build
+```
+
+Ou em um passo (valida tokens antes do compose):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 staging-up
 ```
 
 | Variavel | Valor staging | Efeito |

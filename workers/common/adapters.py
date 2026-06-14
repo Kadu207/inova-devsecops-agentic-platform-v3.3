@@ -102,12 +102,27 @@ async def _sonar_adapter(event: EventEnvelope) -> Dict[str, Any]:
             "note": "Configure SONAR_HOST_URL e SONAR_TOKEN.",
         }
     project_key = event.payload.get("project_key") or event.project
+    base_url = settings.sonar_host_url.rstrip("/")
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(
-            f"{settings.sonar_host_url.rstrip('/')}/api/qualitygates/project_status",
+            f"{base_url}/api/qualitygates/project_status",
             params={"projectKey": project_key},
             auth=(settings.sonar_token, ""),
         )
+        if response.status_code == 404:
+            validate = await client.get(
+                f"{base_url}/api/authentication/validate",
+                auth=(settings.sonar_token, ""),
+            )
+            validate.raise_for_status()
+            return {
+                "mode": "integrated",
+                "provider": "sonarqube",
+                "project_key": project_key,
+                "quality_gate": "UNKNOWN",
+                "passed": False,
+                "note": f"Projeto '{project_key}' nao encontrado; token Sonar valido.",
+            }
         response.raise_for_status()
         data = response.json()
         status = data.get("projectStatus", {}).get("status", "UNKNOWN")
@@ -128,20 +143,19 @@ async def _snyk_adapter(event: EventEnvelope) -> Dict[str, Any]:
     org_id = event.payload.get("org_id", "")
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(
-            "https://api.snyk.io/rest/orgs",
-            headers={
-                "Authorization": f"token {settings.snyk_token}",
-                "Accept": "application/vnd.api+json",
-            },
+            "https://api.snyk.io/v1/user/me",
+            headers={"Authorization": f"token {settings.snyk_token}"},
         )
         response.raise_for_status()
         data = response.json()
-        orgs = [item.get("id") for item in data.get("data", []) if item.get("id")]
+        orgs = data.get("orgs", [])
+        org_ids = [item.get("id") for item in orgs if item.get("id")]
         return {
             "mode": "integrated",
             "provider": "snyk",
-            "org_id": org_id or (orgs[0] if orgs else None),
-            "orgs_available": len(orgs),
+            "username": data.get("username"),
+            "org_id": org_id or (org_ids[0] if org_ids else None),
+            "orgs_available": len(org_ids),
             "vulnerabilities_checked": True,
         }
 
