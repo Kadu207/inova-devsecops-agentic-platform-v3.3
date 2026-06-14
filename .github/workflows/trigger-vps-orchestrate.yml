@@ -1,0 +1,105 @@
+name: trigger-vps-orchestrate
+
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: "Pipeline preset na VPS"
+        required: true
+        default: "full-devsecops"
+        type: choice
+        options:
+          - full-devsecops
+          - orchestrate-audit
+  workflow_run:
+    workflows: [sonarcloud]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: trigger-vps-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  notify-vps:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch'
+      || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    steps:
+      - name: Skip when secrets missing
+        id: check
+        run: |
+          if [ -z "${{ secrets.WEBHOOK_URL }}" ] || [ -z "${{ secrets.WEBHOOK_SECRET }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "WEBHOOK_URL ou WEBHOOK_SECRET nao configurados — pulando."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
+
+      - name: Build orchestrate payload
+        if: steps.check.outputs.skip != 'true'
+        id: payload
+        run: |
+          PIPE="${{ github.event.inputs.pipeline || 'full-devsecops' }}"
+          CID="gh-${{ github.run_id }}-$(date +%s)"
+          if [ "$PIPE" = "full-devsecops" ]; then
+            BODY=$(jq -nc \
+              --arg cid "$CID" \
+              --arg sha "${{ github.sha }}" \
+              '{
+                subject: "task.orchestrate.requested",
+                tenant_id: "inova-ti",
+                project: "inova-ti-os",
+                correlation_id: $cid,
+                payload: {
+                  pipeline: "full-devsecops",
+                  source: "github-actions",
+                  commit: $sha,
+                  next_tasks: [
+                    "task.audit.requested",
+                    "task.opencode.requested",
+                    "task.sonar.requested",
+                    "task.snyk.requested",
+                    "task.datadog.requested",
+                    "task.test.requested",
+                    "task.build.requested",
+                    "task.review.requested",
+                    "task.release.requested",
+                    "task.notification.requested"
+                  ]
+                }
+              }')
+          else
+            BODY=$(jq -nc \
+              --arg cid "$CID" \
+              --arg sha "${{ github.sha }}" \
+              '{
+                subject: "task.orchestrate.requested",
+                tenant_id: "inova-ti",
+                project: "inova-ti-os",
+                correlation_id: $cid,
+                payload: {
+                  pipeline: "orchestrate-audit",
+                  source: "github-actions",
+                  commit: $sha,
+                  next_tasks: ["task.audit.requested"]
+                }
+              }')
+          fi
+          echo "body=$BODY" >> "$GITHUB_OUTPUT"
+          echo "correlation_id=$CID" >> "$GITHUB_OUTPUT"
+
+      - name: POST VPS webhook (HMAC)
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          BODY='${{ steps.payload.outputs.body }}'
+          SIG="sha256=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" | awk '{print $2}')"
+          curl -sfS -X POST "${{ secrets.WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -H "X-Inova-Signature: $SIG" \
+            -d "$BODY"
+          echo "VPS webhook accepted correlation_id=${{ steps.payload.outputs.correlation_id }}"

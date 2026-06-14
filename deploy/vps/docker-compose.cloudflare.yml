@@ -1,0 +1,14 @@
+# Cloudflare proxy/tunnel — sem Caddy (porta 80/443 ja ocupada na VPS)
+# Roteie no Cloudflare: skillsmcp.inovatitech.com.br
+#   /health  -> http://128.140.77.31:8787/health
+#   /webhook -> http://128.140.77.31:8787/webhook
+
+services:
+  minio:
+    ports: !override
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+
+  webhook-ingress:
+    ports: !override
+      - "8787:8787"

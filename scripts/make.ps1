@@ -44,7 +44,9 @@ switch ($Target) {
   }
   "e2e-orchestrate-audit" { & powershell -ExecutionPolicy Bypass -File scripts/e2e_orchestrate_audit.ps1 }
   "e2e-full-pipeline" { & powershell -ExecutionPolicy Bypass -File scripts/e2e_full_pipeline.ps1 }
+  "e2e-full-pipeline-remote" { & powershell -ExecutionPolicy Bypass -File scripts/e2e_full_pipeline_remote.ps1 @args }
   "wave5-golden-run" { & powershell -ExecutionPolicy Bypass -File scripts/wave5_golden_run.ps1 @args }
+  "wave6-golden-run-vps" { & powershell -ExecutionPolicy Bypass -File scripts/wave6_golden_run_vps.ps1 @args }
   "apply-branch-protection" { & powershell -ExecutionPolicy Bypass -File scripts/apply_branch_protection.ps1 @args }
   "validate-tokens" { & powershell -ExecutionPolicy Bypass -File scripts/validate_tokens.ps1 @args }
   "staging-up" {
