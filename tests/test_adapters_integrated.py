@@ -56,7 +56,10 @@ async def test_snyk_integrated_with_mock():
         with patch("workers.common.adapters.httpx.AsyncClient") as client_cls:
             client_cls.return_value = _mock_http_client(
                 get_response=_json_response(
-                    {"data": [{"id": "org-1"}, {"id": "org-2"}]}
+                    {
+                        "username": "inovatidev",
+                        "orgs": [{"id": "org-1"}, {"id": "org-2"}],
+                    }
                 )
             )
             result = await run_adapter("snyk_worker", event)
