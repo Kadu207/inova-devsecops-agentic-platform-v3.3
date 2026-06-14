@@ -22,7 +22,9 @@ def _site_host() -> str:
 
 
 def is_enabled() -> bool:
-    return settings.observability_datadog_enabled and bool(settings.datadog_api_key.strip())
+    return settings.observability_datadog_enabled and bool(
+        settings.datadog_api_key.strip()
+    )
 
 
 def export_audit_entry(
@@ -89,5 +91,9 @@ def export_audit_entry(
     except Exception as exc:
         log.warning(
             "datadog_export_failed",
-            extra={"worker": worker, "correlation_id": correlation_id, "error": str(exc)},
+            extra={
+                "worker": worker,
+                "correlation_id": correlation_id,
+                "error": str(exc),
+            },
         )

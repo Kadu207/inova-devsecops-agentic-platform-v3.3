@@ -122,7 +122,9 @@ async def run_ingress() -> None:
             signature = self.headers.get("X-Inova-Signature")
 
             if not _verify_signature(body, signature):
-                self._json_response(HTTPStatus.UNAUTHORIZED, {"error": "invalid_signature"})
+                self._json_response(
+                    HTTPStatus.UNAUTHORIZED, {"error": "invalid_signature"}
+                )
                 return
 
             try:
@@ -135,7 +137,10 @@ async def run_ingress() -> None:
             if not subject or subject not in ALLOWED_SUBJECTS:
                 self._json_response(
                     HTTPStatus.BAD_REQUEST,
-                    {"error": "subject_not_allowed", "allowed": sorted(ALLOWED_SUBJECTS)},
+                    {
+                        "error": "subject_not_allowed",
+                        "allowed": sorted(ALLOWED_SUBJECTS),
+                    },
                 )
                 return
 

@@ -95,7 +95,9 @@ async def _opencode_adapter(event: EventEnvelope) -> Dict[str, Any]:
 async def _sonar_adapter(event: EventEnvelope) -> Dict[str, Any]:
     if not settings.sonar_token or not settings.sonar_host_url:
         if settings.worker_adapter_mode.lower() == "integrated":
-            raise RuntimeError("SONAR_HOST_URL e SONAR_TOKEN obrigatorios em modo integrated.")
+            raise RuntimeError(
+                "SONAR_HOST_URL e SONAR_TOKEN obrigatorios em modo integrated."
+            )
         return {
             "mode": "stub",
             "provider": "sonarqube",
