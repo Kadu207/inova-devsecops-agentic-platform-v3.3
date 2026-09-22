@@ -2,7 +2,9 @@ param(
   [string]$Repo = "Kadu207/inova-devsecops-agentic-platform-v3.3",
   [string[]]$Branches = @("main"),
   [int]$ReviewCount = 1,
-  [switch]$DryRun
+  [switch]$DryRun,
+  [switch]$MakePublicIfRequired,
+  [switch]$SkipWave7Checks
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,19 +15,24 @@ $requiredChecks = @(
   "ci",
   "security"
 )
+if (-not $SkipWave7Checks) {
+  $requiredChecks += @("gitleaks", "trivy")
+}
 
 Write-Host "==> Branch protection: $Repo"
 Write-Host "    Branches: $($Branches -join ', ')"
 Write-Host "    Required checks: $($requiredChecks -join ', ')"
 
-if ($DryRun) {
-  Write-Host "[dry-run] Nenhuma alteracao aplicada."
-  exit 0
+function Get-RepoVisibility {
+  gh api "repos/$Repo" --jq .visibility
 }
 
-foreach ($branch in $Branches) {
-  Write-Host "==> Aplicando protecao em '$branch'..."
+function Set-RepoPublic {
+  Write-Host "==> Tornando $Repo publico (GitHub Free exige repo publico para proteger a main)"
+  gh repo edit $Repo --visibility public --accept-visibility-change-consequences
+}
 
+function Apply-Protection([string]$Branch) {
   $payload = @{
     required_status_checks = @{
       strict = $true
@@ -47,31 +54,52 @@ foreach ($branch in $Branches) {
   $tmp = New-TemporaryFile
   $utf8NoBom = New-Object System.Text.UTF8Encoding $false
   [System.IO.File]::WriteAllText($tmp.FullName, $payload, $utf8NoBom)
-
   try {
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    $output = gh api -X PUT "repos/$Repo/branches/$branch/protection" --input $tmp.FullName 2>&1
+    $output = gh api -X PUT "repos/$Repo/branches/$Branch/protection" --input $tmp.FullName 2>&1
     $exit = $LASTEXITCODE
     $ErrorActionPreference = $prevEap
-    if ($exit -ne 0) {
-      $text = ($output | Out-String)
-      if ($text -match "403" -or $text -match "Upgrade to GitHub Pro") {
-        Write-Host ""
-        Write-Host "AVISO: Branch protection em repo privado exige GitHub Pro/Team."
-        Write-Host "Alternativas:"
-        Write-Host "  1. Upgrade do plano GitHub"
-        Write-Host "  2. MCP github-governance-mcp-local (Cursor) quando plano permitir"
-        Write-Host "  3. Confiar nos workflows CI ate upgrade (PRs ainda rodam checks)"
-        exit 2
-      }
-      Write-Host $text
-      exit $exit
-    }
-    Write-Host "OK: protecao aplicada em $branch"
+    return @{ Exit = $exit; Output = ($output | Out-String) }
   } finally {
     Remove-Item -Force $tmp.FullName
   }
+}
+
+if ($DryRun) {
+  Write-Host "[dry-run] Nenhuma alteracao aplicada."
+  exit 0
+}
+
+$visibility = Get-RepoVisibility
+Write-Host "    Visibility atual: $visibility"
+
+foreach ($branch in $Branches) {
+  Write-Host "==> Aplicando protecao em '$branch'..."
+  $result = Apply-Protection $branch
+  if ($result.Exit -eq 0) {
+    Write-Host "OK: protecao aplicada em $branch"
+    continue
+  }
+
+  $text = $result.Output
+  $needsPublic = ($text -match "403") -or ($text -match "Upgrade to GitHub Pro") -or ($text -match "make this repository public")
+  if ($needsPublic -and $MakePublicIfRequired) {
+    if ($visibility -ne "public") {
+      Set-RepoPublic
+      $visibility = "public"
+    }
+    $retry = Apply-Protection $branch
+    if ($retry.Exit -ne 0) {
+      Write-Host $retry.Output
+      exit $retry.Exit
+    }
+    Write-Host "OK: protecao aplicada em $branch (repo publico)"
+    continue
+  }
+
+  Write-Host $text
+  exit $result.Exit
 }
 
 Write-Host "Branch protection concluida."

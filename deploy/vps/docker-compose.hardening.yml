@@ -1,0 +1,93 @@
+services:
+  nats:
+    command: ["-c", "/etc/nats/nats.conf"]
+    volumes:
+      - nats_data:/data
+      - ./deploy/nats/nats-tls.conf:/etc/nats/nats.conf:ro
+      - ./deploy/tls/generated:/etc/nats/tls:ro
+
+  postgres:
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/postgres:/docker-entrypoint-initdb.d:ro
+      - ./deploy/postgres/postgresql.hardening.conf:/etc/postgresql/postgresql.conf:ro
+      - ./deploy/tls/generated:/var/lib/postgresql/tls:ro
+      - postgres_wal_archive:/wal_archive
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inova -d inova_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  vault:
+    image: hashicorp/vault:1.17
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    command: ["server", "-config=/vault/config/config.hcl"]
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    ports:
+      - "127.0.0.1:8200:8200"
+    volumes:
+      - vault_data:/vault/data
+      - ./deploy/vault/config.hcl:/vault/config/config.hcl:ro
+      - ./deploy/vault/policies:/vault/policies:ro
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-inova_grafana_change_me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      GF_POSTGRES_SSLMODE: require
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/inova-audit-overview.json:/var/lib/grafana/dashboards/inova-audit-overview.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres-backup:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: inova
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: inova_platform
+      PGSSLMODE: require
+    volumes:
+      - postgres_basebackup:/backups
+      - postgres_wal_archive:/wal_archive
+      - ./scripts/backup_pitr.sh:/backup/backup_loop.sh:ro
+      - ./deploy/tls/generated/ca.crt:/root/.postgresql/root.crt:ro
+    entrypoint: ["/bin/bash", "/backup/backup_loop.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  webhook-ingress:
+    ports: !override
+      - "127.0.0.1:8787:8787"
+
+volumes:
+  vault_data:
+  grafana_data:
+  postgres_wal_archive:
+  postgres_basebackup:

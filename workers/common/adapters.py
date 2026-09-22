@@ -51,6 +51,8 @@ async def run_adapter(worker_name: str, event: EventEnvelope) -> Dict[str, Any]:
 
 async def _opencode_adapter(event: EventEnvelope) -> Dict[str, Any]:
     if not settings.openrouter_api_key:
+        if settings.worker_adapter_mode.lower() == "integrated":
+            raise RuntimeError("OPENROUTER_API_KEY obrigatorio em modo integrated.")
         return {
             "mode": "stub",
             "provider": "openrouter",

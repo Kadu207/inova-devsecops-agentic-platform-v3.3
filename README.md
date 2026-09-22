@@ -65,7 +65,7 @@ make e2e-full-pipeline
 python scripts/query_audit_log.py --correlation-id <id>
 ```
 
-Documentação: `docs/WAVE3-OPERATIONS.md`, `docs/integrations/README.md`, `docs/WAVE4-MCP-AND-CI.md`
+Documentação: `docs/WAVE3-OPERATIONS.md`, `docs/integrations/README.md`, `docs/WAVE4-MCP-AND-CI.md`, `docs/WAVE7-HARDENING.md`
 
 ### Windows (sem `make`)
 
@@ -101,6 +101,21 @@ powershell -ExecutionPolicy Bypass -File scripts/deploy-vps.ps1 -Domain staging.
 ```
 
 Documentação: `docs/WAVE6-STAGING-OBSERVABILITY-VPS.md`
+
+## Onda 7 — Hardening e merge gate
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 test
+powershell -ExecutionPolicy Bypass -File scripts/import_grafana_dashboard.ps1
+powershell -ExecutionPolicy Bypass -File scripts/apply_branch_protection.ps1 -MakePublicIfRequired
+```
+
+- CI: jobs `gitleaks` e `trivy` no workflow `security`
+- VPS: Vault + TLS Postgres/NATS + PITR + UFW 22/80/443
+- Grafana: profile `observability`, dashboard `inova-audit-overview`
+- Branch protection na `main` (repositório público no GitHub Free)
+
+Documentação: `docs/WAVE7-HARDENING.md`
 
 ## Observação de segurança
 

@@ -38,13 +38,15 @@ Sem tokens, todos respondem em modo **stub** (seguro para local/CI).
 
 ## Checklist produção (VPS)
 
-- [ ] Trocar senhas default (`change_me`) em Postgres, MinIO, Redis
-- [ ] `APP_ENV=production` no `.env`
-- [ ] Firewall: expor só portas necessárias (443/80, não 55432 publicamente)
-- [ ] TLS no Postgres e NATS (ou rede privada)
-- [ ] Backup PITR PostgreSQL + volume NATS JetStream
-- [ ] Monitoramento: health NATS `:8222`, logs workers, alertas Datadog
-- [ ] Secrets em vault (não `.env` em disco no servidor)
+- [x] Trocar senhas default (`change_me`) em Postgres, MinIO, Redis
+- [x] `APP_ENV=production` no `.env` (ou `staging` no overlay; defaults `change_me` bloqueados)
+- [x] Firewall: expor só 80/443 (+ SSH); webhook em loopback
+- [x] TLS no Postgres e NATS (overlay `docker-compose.hardening.yml`)
+- [x] Backup PITR PostgreSQL + volume NATS JetStream
+- [x] Monitoramento: Grafana `inova-audit-overview` + Datadog
+- [x] Secrets em Vault / tmpfs `/run/inova` (não `.env` no checkout do servidor)
+
+Ver Onda 7: `docs/WAVE7-HARDENING.md`
 
 ## Próxima etapa sugerida (Onda 4)
 

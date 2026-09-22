@@ -20,7 +20,7 @@ services:
       POSTGRES_USER: inova
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inova_dev_password_change_me}
     ports:
-      - "127.0.0.1:55432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-55432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/postgres:/docker-entrypoint-initdb.d:ro
@@ -135,6 +135,25 @@ services:
       - path: .env.staging
         required: false
 
+  grafana:
+    image: grafana/grafana:11.2.2
+    profiles: ["observability"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-inova_grafana_change_me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inova_dev_password_change_me}
+      GF_POSTGRES_SSLMODE: disable
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/inova-audit-overview.json:/var/lib/grafana/dashboards/inova-audit-overview.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   opencode:
     image: node:22-bookworm
     working_dir: /workspace
@@ -152,3 +171,4 @@ volumes:
   qdrant_data:
   minio_data:
   opencode_cache:
+  grafana_data:

@@ -37,9 +37,9 @@ powershell -ExecutionPolicy Bypass -File scripts/deploy-vps.ps1 -Domain staging.
 
 Quando a VPS ja usa **80/443** (nginx, cloudflared, etc.), use o override `deploy/vps/docker-compose.cloudflare.yml`:
 
-- Webhook exposto em **`0.0.0.0:8787`** (acessivel pelo IP publico)
+- Webhook exposto em **`127.0.0.1:8787`** (Onda 7 — nao publicar 8787)
 - MinIO remapeado para **`127.0.0.1:19000`** (evita conflito com MinIO do Swarm na 9000)
-- **Sem Caddy** na origem
+- **Sem Caddy** na origem; use Cloudflare Tunnel para 80/443 -> `http://127.0.0.1:8787`
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/deploy-vps-hetzner.ps1 `

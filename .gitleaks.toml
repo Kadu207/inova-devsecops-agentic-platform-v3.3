@@ -1,0 +1,17 @@
+title = "Inova DevSecOps gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local reports, generated TLS, and example placeholders"
+paths = [
+  '''reports/''',
+  '''deploy/tls/generated/''',
+  '''mcp/inova-runtime-mcp/node_modules/''',
+]
+regexes = [
+  '''inova_dev_password_change_me''',
+  '''inova_minio_dev_change_me''',
+  '''CHANGE_ME_''',
+]

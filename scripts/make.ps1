@@ -57,12 +57,18 @@ switch ($Target) {
   "sonar-scan" { & powershell -ExecutionPolicy Bypass -File scripts/sonar_scan.ps1 @args }
   "link-sonar-github" { & powershell -ExecutionPolicy Bypass -File scripts/link_sonarcloud_github.ps1 @args }
   "deploy-vps-hetzner" { & powershell -ExecutionPolicy Bypass -File scripts/deploy-vps-hetzner.ps1 @args }
+  "observability-up" {
+    docker compose --profile observability up -d grafana
+  }
+  "import-grafana" { & powershell -ExecutionPolicy Bypass -File scripts/import_grafana_dashboard.ps1 @args }
+  "wave7-golden-run" { & powershell -ExecutionPolicy Bypass -File scripts/apply_branch_protection.ps1 -MakePublicIfRequired @args }
   default {
     Write-Host "Alvo desconhecido: $Target"
     Write-Host "Targets: bootstrap, dev, down, logs, test, lint, validate-contracts,"
     Write-Host "  publish-audit, publish-opencode, publish-orchestrate, publish-full-pipeline,"
     Write-Host "  audit-log, release-check, e2e-orchestrate-audit, e2e-full-pipeline,"
-    Write-Host "  wave5-golden-run, apply-branch-protection, validate-tokens, staging-up, sonar-scan"
+    Write-Host "  wave5-golden-run, apply-branch-protection, validate-tokens, staging-up, sonar-scan,"
+    Write-Host "  observability-up, import-grafana, deploy-vps-hetzner"
     exit 1
   }
 }
