@@ -15,4 +15,4 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: python -m compileall runtime workers scripts
-      - run: pytest -q tests/test_events.py tests/test_contracts.py tests/test_adapters.py tests/test_adapters_integrated.py tests/test_orchestrator.py
+      - run: pytest -q tests/test_events.py tests/test_contracts.py tests/test_adapters.py tests/test_adapters_integrated.py tests/test_orchestrator.py tests/test_wave7_hardening.py tests/test_nats_tls.py

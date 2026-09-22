@@ -28,6 +28,16 @@ make publish-orchestrate
 - PostgreSQL: multi-tenant, audit log (`worker_audit_log`) e DLQ (`dead_letter_events`)
 - Workers: orquestração (`task.orchestrate.requested`), auditoria, OpenCode, Sonar, Snyk, Datadog, testes, build, revisão, release e notificações
 
+### Portas locais alternativas
+
+- NATS: `14222`; monitor: `18222`
+- PostgreSQL: `15432`
+- Redis: `16379`; Qdrant: `16333`
+- MinIO: `19010`; console: `19011`
+- Webhook: `18787`; Grafana: `13000`
+
+Todas podem ser sobrescritas pelas variáveis `*_HOST_PORT` do `.env`.
+
 ## Modos de worker
 
 - **stub** (padrão local): resposta simulada sem credenciais
@@ -65,7 +75,7 @@ make e2e-full-pipeline
 python scripts/query_audit_log.py --correlation-id <id>
 ```
 
-Documentação: `docs/WAVE3-OPERATIONS.md`, `docs/integrations/README.md`, `docs/WAVE4-MCP-AND-CI.md`
+Documentação: `docs/WAVE3-OPERATIONS.md`, `docs/integrations/README.md`, `docs/WAVE4-MCP-AND-CI.md`, `docs/WAVE7-HARDENING.md`
 
 ### Windows (sem `make`)
 
@@ -87,7 +97,7 @@ Recarregue o Cursor — server `inova-runtime-mcp-local` em `.cursor/mcp.json`.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/wave5_golden_run.ps1
-docker compose --profile staging up -d webhook-ingress
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 staging-up
 ```
 
 Documentação: `docs/WAVE5-GOVERNANCE-AND-STAGING.md`
@@ -96,11 +106,26 @@ Documentação: `docs/WAVE5-GOVERNANCE-AND-STAGING.md`
 
 ```powershell
 copy .env.staging.example .env.staging
-docker compose --env-file .env.staging --profile staging up -d --build
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 staging-up
 powershell -ExecutionPolicy Bypass -File scripts/deploy-vps.ps1 -Domain staging.seudominio.com
 ```
 
 Documentação: `docs/WAVE6-STAGING-OBSERVABILITY-VPS.md`
+
+## Onda 7 — Hardening e merge gate
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 test
+powershell -ExecutionPolicy Bypass -File scripts/import_grafana_dashboard.ps1
+powershell -ExecutionPolicy Bypass -File scripts/apply_branch_protection.ps1 -MakePublicIfRequired
+```
+
+- CI: jobs `gitleaks` e `trivy` no workflow `security`
+- VPS: Vault + TLS Postgres/NATS + PITR + UFW 22/80/443
+- Grafana: profile `observability`, dashboard `inova-audit-overview`
+- Branch protection na `main` (repositório público no GitHub Free)
+
+Documentação: `docs/WAVE7-HARDENING.md`
 
 ## Observação de segurança
 

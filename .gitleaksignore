@@ -1,0 +1,2 @@
+# False positive: shell expands SONAR_TOKEN at runtime; no credential is stored.
+c9cfe09b687f7fa0001c8a4fbe88b98b17944391:scripts/validate_tokens.sh:curl-auth-user:53

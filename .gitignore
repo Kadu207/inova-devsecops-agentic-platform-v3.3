@@ -19,3 +19,8 @@ reports/
 .DS_Store
 Thumbs.db
 .scannerwork/
+deploy/tls/generated/**
+!deploy/tls/generated/.gitkeep
+.vault-token
+.gitleaks/
+

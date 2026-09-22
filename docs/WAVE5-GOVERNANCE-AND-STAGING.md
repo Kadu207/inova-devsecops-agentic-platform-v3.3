@@ -68,7 +68,7 @@ No workspace **Evolução de Skills e MCP**, após Reload Window:
   "allow_deletions": false,
   "required_conversation_resolution": true,
   "strict": true,
-  "contexts": ["gates", "e2e-orchestrate-audit", "ci", "security"]
+  "contexts": ["gates", "e2e-orchestrate-audit", "ci", "security", "gitleaks", "trivy"]
 }
 ```
 
@@ -137,13 +137,11 @@ Runbook: `docs/runbooks/vps-deploy.md`
 - [x] Golden run script com relatório auditável
 - [x] Script/MCP path para branch protection documentado
 - [x] Webhook ingress com HMAC + validação de contrato
-- [ ] Branch protection aplicada (bloqueado por plano GitHub — documentado)
-- [ ] Webhook testado em VPS staging (quando VPS disponível)
+- [x] Branch protection aplicada (repo público no GitHub Free — Onda 7)
+- [x] Webhook testado em VPS staging (Onda 6)
 
 ---
 
-## Onda 6 (sugestão)
+## Onda 6 / 7
 
-- Modo **integrated** em staging com tokens reais (Sonar/Snyk/Datadog)
-- Observabilidade: export audit log → Datadog/Grafana
-- Required checks como merge gate após upgrade GitHub Pro
+Onda 6: staging integrated, Datadog, VPS. Onda 7: `docs/WAVE7-HARDENING.md` (Trivy, gitleaks, Vault, TLS, PITR, Grafana, merge gate).

@@ -34,6 +34,7 @@ Guia operacional para agentes Cursor neste repositorio event-driven.
 - `.cursor/skills/opencode-audit/SKILL.md`
 - `.cursor/skills/release-validation/SKILL.md`
 - `.cursor/skills/full-pipeline-e2e/SKILL.md`
+- `.cursor/skills/wave7-hardening/SKILL.md`
 
 ## MCP (Onda 4)
 - Server: `mcp/inova-runtime-mcp/` — tools `publish_orchestrate`, `publish_event`, `query_audit_log`, `runtime_health`

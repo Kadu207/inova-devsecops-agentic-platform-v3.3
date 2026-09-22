@@ -1,17 +1,90 @@
 {
-  "title": "Inova Audit Overview",
-  "uid": "inova-audit-overview",
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
   "panels": [
     {
-      "title": "Audit events by worker",
-      "type": "logs",
+      "datasource": { "type": "postgres", "uid": "inova-postgres" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
       "targets": [
         {
-          "expr": "{service=\"inova-devsecops-agentic-platform\"}"
+          "datasource": { "type": "postgres", "uid": "inova-postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS value FROM worker_audit_log WHERE created_at > now() - interval '24 hours'",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Audit events (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "inova-postgres" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "inova-postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS value FROM worker_audit_log WHERE status = 'failed' AND created_at > now() - interval '24 hours'",
+          "refId": "A"
+        }
+      ],
+      "title": "Failed events (24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "inova-postgres" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 3,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "inova-postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT worker, count(*) AS events FROM worker_audit_log WHERE created_at > now() - interval '7 days' GROUP BY worker ORDER BY events DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Events by worker (7d)",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "inova-postgres" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "inova-postgres" },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT created_at, worker, status, correlation_id, event_type, left(coalesce(error, ''), 120) AS error FROM worker_audit_log ORDER BY created_at DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest audit rows",
+      "type": "table"
     }
   ],
+  "refresh": "30s",
   "schemaVersion": 39,
-  "version": 1
+  "tags": ["inova", "audit"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Inova Audit Overview",
+  "uid": "inova-audit-overview",
+  "version": 2
 }

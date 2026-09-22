@@ -18,3 +18,5 @@ jobs:
       - run: test -f docs/legal/politica-de-privacidade.md
       - run: test -f docs/legal/termos-de-uso.md
       - run: test -f docs/security/pipeline-security.md
+      - run: test -f docs/WAVE7-HARDENING.md
+      - run: test -f deploy/vps/docker-compose.hardening.yml

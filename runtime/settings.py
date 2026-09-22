@@ -1,14 +1,21 @@
 from pydantic import field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from runtime.secret_loader import apply_runtime_secrets
+
+apply_runtime_secrets()
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     app_env: str = "development"
     project_name: str = "inova-devsecops-agentic-platform"
     tenant_id: str = "inova-ti"
     nats_url: str = "nats://localhost:4222"
     nats_stream: str = "INOVA_TASKS"
     nats_consumer_prefix: str = "inova"
+    postgres_host_port: int = 15432
     database_url: str = (
         "postgresql://inova:inova_dev_password_change_me@localhost:5432/inova_platform"
     )
@@ -27,19 +34,31 @@ class Settings(BaseSettings):
     observability_datadog_enabled: bool = False
     grafana_url: str = ""
     grafana_api_key: str = ""
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    grafana_admin_password: str = ""
+    vault_addr: str = ""
+    vault_cacert: str = ""
+    vault_token: str = ""
+    vault_token_file: str = ""
+    vault_kv_mount: str = "secret"
+    vault_secret_path: str = "inova/runtime"
+    nats_tls_ca: str = ""
+    nats_tls_cert: str = ""
+    nats_tls_key: str = ""
+    postgres_sslmode: str = "disable"
 
     @field_validator("database_url")
     @classmethod
     def reject_default_secrets_in_production(cls, value: str, info):
         app_env = info.data.get("app_env", "development")
-        if app_env.lower() == "production" and "change_me" in value:
+        if (
+            app_env.lower() in {"production", "staging"}
+            and "change_me" in value.lower()
+        ):
             raise ValueError(
-                "DATABASE_URL must not use default credentials in production."
+                "DATABASE_URL must not use default credentials in staging/production."
             )
+        if app_env.lower() == "production" and "sslmode=require" not in value.lower():
+            raise ValueError("DATABASE_URL must include sslmode=require in production.")
         return value
 
 

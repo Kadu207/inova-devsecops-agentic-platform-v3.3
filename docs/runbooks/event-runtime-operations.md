@@ -4,7 +4,7 @@
 
 | Serviço | URL / comando |
 |---------|----------------|
-| NATS | http://127.0.0.1:8222/healthz |
+| NATS | http://127.0.0.1:18222/healthz |
 | Postgres | `docker compose exec postgres pg_isready -U inova -d inova_platform` |
 | Workers | `docker compose ps` — todos `Up` |
 
@@ -43,7 +43,7 @@ powershell -ExecutionPolicy Bypass -File scripts/e2e_full_pipeline.ps1
 
 | Sintoma | Causa provável | Ação |
 |---------|----------------|------|
-| Postgres não sobe | Porta 5432/5433 ocupada | Usar host `55432` (docker-compose) |
+| Postgres não sobe | Porta padrão ocupada | Usar host `15432` ou alterar `POSTGRES_HOST_PORT` |
 | NATS unhealthy | Imagem scratch sem wget | Usar `nats:2.10-alpine` |
 | Publisher ModuleNotFoundError | PYTHONPATH | Rebuild workers (`docker compose build`) |
 | 0 rows no audit log | Workers não subiram | `docker compose up -d --build` e aguardar healthy |

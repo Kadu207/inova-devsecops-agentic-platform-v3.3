@@ -1,4 +1,7 @@
 name: security
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, develop]
@@ -17,3 +20,42 @@ jobs:
       - run: pip-audit -r requirements.txt
       - run: bandit -r runtime workers scripts -q
       - run: pytest -q tests/test_events.py tests/test_contracts.py tests/test_adapters.py
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz -o gitleaks.tgz
+          tar -xzf gitleaks.tgz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+      - name: Detect secrets
+        run: gitleaks detect --source . --verbose --redact --exit-code 1
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build worker image
+        run: docker build -f Dockerfile.worker -t inova-worker:${{ github.sha }} .
+      - name: Trivy image (CRITICAL gate)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: "inova-worker:${{ github.sha }}"
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL
+      - name: Trivy filesystem secrets/misconfig
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+          scanners: vuln,secret,misconfig

@@ -33,7 +33,7 @@ O arquivo `.cursor/mcp.json` já registra o server. Recarregue o Cursor (Reload 
 
 - `publish_orchestrate` — pipeline `default` ou `full-devsecops`
 - `publish_event` — subject + payload JSON
-- `query_audit_log` — consulta Postgres (host `127.0.0.1:55432`)
+- `query_audit_log` — consulta Postgres (host `127.0.0.1:15432`)
 - `runtime_health` — `docker compose ps` + NATS healthz
 
 ### Pré-requisito

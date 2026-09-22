@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import ssl
 from typing import Awaitable, Callable
 
 import nats
@@ -23,8 +24,25 @@ class NatsEventBus:
         self.nc = None
         self.js = None
 
+    def _tls_context(self) -> ssl.SSLContext | None:
+        if not settings.nats_url.startswith("tls://"):
+            return None
+        context = ssl.create_default_context()
+        ca = getattr(settings, "nats_tls_ca", "") or ""
+        if isinstance(ca, str) and ca:
+            context.load_verify_locations(ca)
+        cert = getattr(settings, "nats_tls_cert", "") or ""
+        key = getattr(settings, "nats_tls_key", "") or ""
+        if isinstance(cert, str) and isinstance(key, str) and cert and key:
+            context.load_cert_chain(cert, key)
+        return context
+
     async def connect(self):
-        self.nc = await nats.connect(settings.nats_url)
+        connect_kwargs = {}
+        tls_context = self._tls_context()
+        if tls_context is not None:
+            connect_kwargs["tls"] = tls_context
+        self.nc = await nats.connect(settings.nats_url, **connect_kwargs)
         self.js = self.nc.jetstream()
         await self.ensure_stream()
         return self
