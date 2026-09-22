@@ -63,8 +63,6 @@ services:
     env_file:
       - path: .env
         required: true
-      - path: .env.staging
-        required: false
     depends_on:
       nats:
         condition: service_healthy
@@ -129,11 +127,6 @@ services:
     ports:
       - "127.0.0.1:${WEBHOOK_HOST_PORT:-18787}:8787"
     profiles: ["staging"]
-    env_file:
-      - path: .env
-        required: true
-      - path: .env.staging
-        required: false
 
   grafana:
     image: grafana/grafana:11.2.2

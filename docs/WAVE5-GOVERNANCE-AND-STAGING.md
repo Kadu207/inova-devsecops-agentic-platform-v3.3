@@ -68,7 +68,7 @@ No workspace **Evolução de Skills e MCP**, após Reload Window:
   "allow_deletions": false,
   "required_conversation_resolution": true,
   "strict": true,
-  "contexts": ["gates", "e2e-orchestrate-audit", "ci", "security"]
+  "contexts": ["gates", "e2e-orchestrate-audit", "ci", "security", "gitleaks", "trivy"]
 }
 ```
 

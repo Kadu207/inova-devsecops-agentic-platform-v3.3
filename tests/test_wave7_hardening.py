@@ -103,3 +103,29 @@ def test_wave7_docs_and_hardening_overlay_exist():
     )
     assert dashboard["uid"] == "inova-audit-overview"
     assert dashboard["title"] == "Inova Audit Overview"
+
+
+def test_hardening_requires_internal_tls_and_runtime_secrets():
+    overlay = Path("deploy/vps/docker-compose.hardening.yml").read_text(
+        encoding="utf-8"
+    )
+    postgres = Path("deploy/postgres/postgresql.hardening.conf").read_text(
+        encoding="utf-8"
+    )
+    pg_hba = Path("deploy/postgres/pg_hba.hardening.conf").read_text(encoding="utf-8")
+    vault = Path("deploy/vault/config.hcl").read_text(encoding="utf-8")
+    assert "/run/inova:/run/inova:ro" in overlay
+    assert "GRAFANA_ADMIN_PASSWORD is required" in overlay
+    assert "hba_file" in postgres
+    assert "hostnossl all" in pg_hba
+    assert "hostssl all" in pg_hba
+    assert 'api_addr = "https://vault:8200"' in vault
+    assert "tls_cert_file" in vault
+
+
+def test_deploy_preserves_database_query_and_mounts_vault_secrets():
+    deploy = Path("scripts/deploy-vps-hetzner.ps1").read_text(encoding="utf-8")
+    assert r"*\?*" in deploy
+    assert "&sslmode=require" in deploy
+    assert "--volume /run/inova:/run/inova:rw" in deploy
+    assert "VAULT_CACERT" in deploy

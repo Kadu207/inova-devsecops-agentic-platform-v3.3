@@ -52,7 +52,10 @@ switch ($Target) {
   "staging-up" {
     & powershell -ExecutionPolicy Bypass -File scripts/validate_tokens.ps1 @args
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    docker compose --env-file .env.staging --profile staging up -d --build
+    docker compose --env-file .env.staging `
+      -f docker-compose.yml `
+      -f deploy/staging/docker-compose.staging.yml `
+      --profile staging up -d --build
   }
   "sonar-scan" { & powershell -ExecutionPolicy Bypass -File scripts/sonar_scan.ps1 @args }
   "link-sonar-github" { & powershell -ExecutionPolicy Bypass -File scripts/link_sonarcloud_github.ps1 @args }

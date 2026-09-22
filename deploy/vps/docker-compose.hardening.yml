@@ -1,3 +1,11 @@
+x-worker-hardening: &worker-hardening
+  env_file: !override
+    - path: /run/inova/env
+      required: true
+  volumes:
+    - .:/app
+    - /run/inova:/run/inova:ro
+
 services:
   nats:
     command: ["-c", "/etc/nats/nats.conf"]
@@ -11,10 +19,13 @@ services:
       - postgres
       - -c
       - config_file=/etc/postgresql/postgresql.conf
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/postgres:/docker-entrypoint-initdb.d:ro
       - ./deploy/postgres/postgresql.hardening.conf:/etc/postgresql/postgresql.conf:ro
+      - ./deploy/postgres/pg_hba.hardening.conf:/etc/postgresql/pg_hba.hardening.conf:ro
       - ./deploy/tls/generated:/var/lib/postgresql/tls:ro
       - postgres_wal_archive:/wal_archive
     healthcheck:
@@ -30,15 +41,17 @@ services:
       - IPC_LOCK
     command: ["server", "-config=/vault/config/config.hcl"]
     environment:
-      VAULT_ADDR: http://127.0.0.1:8200
+      VAULT_ADDR: https://127.0.0.1:8200
+      VAULT_CACERT: /vault/tls/ca.crt
     ports:
       - "127.0.0.1:8200:8200"
     volumes:
       - vault_data:/vault/data
       - ./deploy/vault/config.hcl:/vault/config/config.hcl:ro
       - ./deploy/vault/policies:/vault/policies:ro
+      - ./deploy/tls/generated:/vault/tls:ro
     healthcheck:
-      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      test: ["CMD-SHELL", "VAULT_CACERT=/vault/tls/ca.crt vault status -address=https://127.0.0.1:8200 || [ $$? -eq 2 ]"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -51,7 +64,7 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-inova_grafana_change_me}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       GF_USERS_ALLOW_SIGN_UP: "false"
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       GF_POSTGRES_SSLMODE: require
@@ -83,8 +96,34 @@ services:
         condition: service_healthy
 
   webhook-ingress:
+    <<: *worker-hardening
     ports: !override
       - "127.0.0.1:8787:8787"
+
+  orchestrator:
+    <<: *worker-hardening
+  audit-worker:
+    <<: *worker-hardening
+  opencode-worker:
+    <<: *worker-hardening
+  sonar-worker:
+    <<: *worker-hardening
+  snyk-worker:
+    <<: *worker-hardening
+  datadog-worker:
+    <<: *worker-hardening
+  test-worker:
+    <<: *worker-hardening
+  build-worker:
+    <<: *worker-hardening
+  review-worker:
+    <<: *worker-hardening
+  release-worker:
+    <<: *worker-hardening
+  notification-worker:
+    <<: *worker-hardening
+  publisher:
+    <<: *worker-hardening
 
 volumes:
   vault_data:

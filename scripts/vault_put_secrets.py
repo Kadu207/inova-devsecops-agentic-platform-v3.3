@@ -40,7 +40,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--env-file", required=True)
     parser.add_argument(
-        "--addr", default=os.environ.get("VAULT_ADDR", "http://127.0.0.1:8200")
+        "--addr", default=os.environ.get("VAULT_ADDR", "https://127.0.0.1:8200")
     )
     parser.add_argument("--token", default=os.environ.get("VAULT_TOKEN", ""))
     parser.add_argument(

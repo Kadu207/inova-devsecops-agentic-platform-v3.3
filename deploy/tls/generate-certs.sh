@@ -2,6 +2,10 @@
 set -euo pipefail
 
 # Gera CA interna + certs Postgres/NATS. Nao versionar a pasta generated/.
+if [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then
+  export MSYS2_ARG_CONV_EXCL="/CN="
+fi
+
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="${1:-$ROOT/deploy/tls/generated}"
 mkdir -p "$OUT"
@@ -28,6 +32,7 @@ EOF
 
 make_cert postgres
 make_cert nats
-chmod 644 "$OUT/ca.crt" "$OUT/postgres.crt" "$OUT/nats.crt"
-chmod 600 "$OUT/ca.key"
+make_cert vault
+chmod 644 "$OUT/ca.crt" "$OUT/postgres.crt" "$OUT/nats.crt" "$OUT/vault.crt"
+rm -f "$OUT/ca.key" "$OUT/ca.srl"
 echo "TLS material written to $OUT"

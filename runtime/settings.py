@@ -1,5 +1,5 @@
 from pydantic import field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from runtime.secret_loader import apply_runtime_secrets
 
@@ -7,6 +7,8 @@ apply_runtime_secrets()
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     app_env: str = "development"
     project_name: str = "inova-devsecops-agentic-platform"
     tenant_id: str = "inova-ti"
@@ -34,6 +36,7 @@ class Settings(BaseSettings):
     grafana_api_key: str = ""
     grafana_admin_password: str = ""
     vault_addr: str = ""
+    vault_cacert: str = ""
     vault_token: str = ""
     vault_token_file: str = ""
     vault_kv_mount: str = "secret"
@@ -42,10 +45,6 @@ class Settings(BaseSettings):
     nats_tls_cert: str = ""
     nats_tls_key: str = ""
     postgres_sslmode: str = "disable"
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     @field_validator("database_url")
     @classmethod

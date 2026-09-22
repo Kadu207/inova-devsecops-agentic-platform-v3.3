@@ -53,30 +53,19 @@ powershell -ExecutionPolicy Bypass -File scripts/deploy-vps-hetzner.ps1 `
 
 ### Roteamento Cloudflare (obrigatorio)
 
-O dominio com **proxy laranja** hoje pode apontar para outro servico (ex.: Excellence Dental). Configure uma das opcoes:
-
-**Opcao A — Cloudflare Tunnel / Zero Trust (recomendado se ja usa cloudflared):**
+O domínio deve usar **Cloudflare Tunnel / Zero Trust**; a porta 8787 permanece
+restrita ao loopback da VPS e nunca deve ser liberada no firewall:
 
 1. Dashboard Cloudflare → **Zero Trust** → **Networks** → **Tunnels**
 2. Edite o tunnel da VPS → **Public Hostname**
 3. Hostname: `skillsmcp.inovatitech.com.br`
-4. Service: `http://127.0.0.1:8787` (ou `http://host.docker.internal:8787` conforme rede do tunnel)
-
-**Opcao B — Origin Rules / Workers (proxy → IP:8787):**
-
-1. Crie regra para `skillsmcp.inovatitech.com.br/*` → origin `http://128.140.77.31:8787`
-2. Firewall Hetzner: liberar **TCP 8787** (somente se Cloudflare conectar direto ao IP, nao via tunnel interno)
-
-**Opcao C — DNS grey cloud (sem proxy):**
-
-1. Registro A: `skillsmcp` → `128.140.77.31`, proxy **desligado**
-2. Clientes acessam `http://skillsmcp.inovatitech.com.br:8787/health` (sem TLS nativo na 8787)
+4. Service: `http://127.0.0.1:8787`
 
 ### Validacao pos-deploy
 
 ```bash
-# Origem (deve retornar JSON ok)
-curl -sf http://128.140.77.31:8787/health
+# Na VPS (origem em loopback)
+curl -sf http://127.0.0.1:8787/health
 
 # Publico (apos rota CF)
 curl -sf https://skillsmcp.inovatitech.com.br/health

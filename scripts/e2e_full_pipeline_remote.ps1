@@ -53,21 +53,22 @@ if ($IdentityFile -and (Test-Path $IdentityFile)) {
   $sshArgs = @("-i", $IdentityFile) + $sshArgs
 }
 $sshTarget = "${VpsUser}@${VpsHost}"
+$compose = "docker compose --env-file /run/inova/env -f docker-compose.yml -f deploy/vps/docker-compose.hardening.yml -f deploy/vps/docker-compose.cloudflare.yml"
 
 $auditSql = "SELECT worker, event_type, status, correlation_id, created_at FROM public.worker_audit_log WHERE correlation_id = '$CorrelationId' ORDER BY id ASC;"
 $countSql = "SELECT COUNT(DISTINCT worker) FROM public.worker_audit_log WHERE correlation_id = '$CorrelationId' AND status = 'completed';"
 
 Write-Host "==> worker_audit_log (VPS):"
-$auditSql | ssh @sshArgs $sshTarget "cd $RemotePath && docker compose --env-file .env.staging exec -T postgres psql -U inova -d inova_platform"
+$auditSql | ssh @sshArgs $sshTarget "cd $RemotePath && $compose exec -T postgres psql -U inova -d inova_platform"
 
-$completedRaw = ($countSql | ssh @sshArgs $sshTarget "cd $RemotePath && docker compose --env-file .env.staging exec -T postgres psql -U inova -d inova_platform -t -A")
+$completedRaw = ($countSql | ssh @sshArgs $sshTarget "cd $RemotePath && $compose exec -T postgres psql -U inova -d inova_platform -t -A")
 $completedWorkers = if ($completedRaw -is [array]) { ($completedRaw -join '') } else { [string]$completedRaw }
 $completedWorkers = ($completedWorkers -replace '\s', '').Trim()
 Write-Host "Workers completed distintos: $completedWorkers (minimo $MinCompletedWorkers)"
 
 if ([int]$completedWorkers -lt $MinCompletedWorkers) {
   Write-Host "E2E FULL PIPELINE REMOTO FAILED"
-  ssh @sshArgs $sshTarget "cd $RemotePath && docker compose --env-file .env.staging logs orchestrator sonar-worker snyk-worker datadog-worker --tail=40"
+  ssh @sshArgs $sshTarget "cd $RemotePath && $compose logs orchestrator sonar-worker snyk-worker datadog-worker --tail=40"
   exit 1
 }
 

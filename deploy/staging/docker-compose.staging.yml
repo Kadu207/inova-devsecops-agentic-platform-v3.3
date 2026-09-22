@@ -1,0 +1,32 @@
+x-staging-env: &staging-env
+  env_file: !override
+    - path: .env.staging
+      required: true
+
+services:
+  orchestrator:
+    <<: *staging-env
+  audit-worker:
+    <<: *staging-env
+  opencode-worker:
+    <<: *staging-env
+  sonar-worker:
+    <<: *staging-env
+  snyk-worker:
+    <<: *staging-env
+  datadog-worker:
+    <<: *staging-env
+  test-worker:
+    <<: *staging-env
+  build-worker:
+    <<: *staging-env
+  review-worker:
+    <<: *staging-env
+  release-worker:
+    <<: *staging-env
+  notification-worker:
+    <<: *staging-env
+  publisher:
+    <<: *staging-env
+  webhook-ingress:
+    <<: *staging-env

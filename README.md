@@ -97,7 +97,7 @@ Recarregue o Cursor — server `inova-runtime-mcp-local` em `.cursor/mcp.json`.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/wave5_golden_run.ps1
-docker compose --profile staging up -d webhook-ingress
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 staging-up
 ```
 
 Documentação: `docs/WAVE5-GOVERNANCE-AND-STAGING.md`
@@ -106,7 +106,7 @@ Documentação: `docs/WAVE5-GOVERNANCE-AND-STAGING.md`
 
 ```powershell
 copy .env.staging.example .env.staging
-docker compose --env-file .env.staging --profile staging up -d --build
+powershell -ExecutionPolicy Bypass -File scripts/make.ps1 staging-up
 powershell -ExecutionPolicy Bypass -File scripts/deploy-vps.ps1 -Domain staging.seudominio.com
 ```
 

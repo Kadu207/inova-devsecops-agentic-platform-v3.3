@@ -21,6 +21,7 @@ _SECRET_KEYS = (
     "NATS_URL",
     "NATS_TLS_CA",
     "VAULT_ADDR",
+    "VAULT_CACERT",
     "VAULT_TOKEN",
     "WORKER_ADAPTER_MODE",
     "OBSERVABILITY_DATADOG_ENABLED",
@@ -36,7 +37,11 @@ def parse_env_file(path: str | Path) -> dict[str, str]:
     env_path = Path(path)
     if not env_path.is_file():
         return values
-    for raw in env_path.read_text(encoding="utf-8").splitlines():
+    try:
+        lines = env_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return values
+    for raw in lines:
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -74,10 +79,12 @@ def fetch_vault_kv(
     timeout: float = 10.0,
 ) -> dict[str, Any]:
     url = urljoin(addr.rstrip("/") + "/", f"v1/{mount}/data/{path.lstrip('/')}")
+    ca_cert = os.environ.get("VAULT_CACERT", "").strip()
     response = httpx.get(
         url,
         headers={"X-Vault-Token": token},
         timeout=timeout,
+        verify=ca_cert or True,
     )
     response.raise_for_status()
     payload = response.json()
@@ -94,11 +101,13 @@ def put_vault_kv(
     timeout: float = 10.0,
 ) -> None:
     url = urljoin(addr.rstrip("/") + "/", f"v1/{mount}/data/{path.lstrip('/')}")
+    ca_cert = os.environ.get("VAULT_CACERT", "").strip()
     response = httpx.post(
         url,
         headers={"X-Vault-Token": token},
         json={"data": secrets},
         timeout=timeout,
+        verify=ca_cert or True,
     )
     response.raise_for_status()
 

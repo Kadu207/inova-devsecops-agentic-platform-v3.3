@@ -66,7 +66,7 @@ apply-branch-protection:
 	MAKE_PUBLIC_IF_REQUIRED=1 bash scripts/apply_branch_protection.sh
 
 staging-up:
-	docker compose --profile staging up -d --build webhook-ingress
+	docker compose --env-file .env.staging -f docker-compose.yml -f deploy/staging/docker-compose.staging.yml --profile staging up -d --build
 
 observability-up:
 	docker compose --profile observability up -d grafana

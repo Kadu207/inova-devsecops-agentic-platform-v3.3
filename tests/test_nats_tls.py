@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -18,8 +18,7 @@ async def test_nats_connect_passes_tls_context_for_tls_url():
         mock_settings.nats_url = "tls://nats:4222"
         mock_settings.nats_tls_ca = ""
         mock_settings.nats_stream = "INOVA_TASKS"
-        fake_nc = AsyncMock()
-        fake_nc.jetstream.return_value = AsyncMock()
+        fake_nc = MagicMock()
         connect.return_value = fake_nc
         await bus.connect()
     assert connect.call_args.kwargs.get("tls") is not None
@@ -35,8 +34,7 @@ async def test_nats_connect_plain_url_has_no_tls_kwarg():
     ):
         mock_settings.nats_url = "nats://nats:4222"
         mock_settings.nats_tls_ca = ""
-        fake_nc = AsyncMock()
-        fake_nc.jetstream.return_value = AsyncMock()
+        fake_nc = MagicMock()
         connect.return_value = fake_nc
         await bus.connect()
     assert "tls" not in connect.call_args.kwargs

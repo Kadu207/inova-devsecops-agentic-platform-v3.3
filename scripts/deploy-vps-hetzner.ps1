@@ -49,13 +49,20 @@ $sshTarget = "${VpsUser}@${VpsHost}"
 if (-not $RemotePath) {
   $RemotePath = if ($VpsUser -eq "root") { "/opt/inova-devsecops" } else { "/home/$VpsUser/inova-devsecops" }
 }
+if ($TlsMode -eq "cloudflare") {
+  $composeFiles = "-f docker-compose.yml -f deploy/vps/docker-compose.hardening.yml -f deploy/vps/docker-compose.cloudflare.yml"
+  $composeEnv = "docker-compose.yml:deploy/vps/docker-compose.hardening.yml:deploy/vps/docker-compose.cloudflare.yml"
+} else {
+  $composeFiles = "-f docker-compose.yml -f deploy/vps/docker-compose.hardening.yml -f deploy/vps/docker-compose.vps.yml --profile vps"
+  $composeEnv = "docker-compose.yml:deploy/vps/docker-compose.hardening.yml:deploy/vps/docker-compose.vps.yml"
+}
 $sshArgs = @("-p", $SshPort, "-o", "StrictHostKeyChecking=accept-new")
 if ($IdentityFile -and (Test-Path $IdentityFile)) {
   $sshArgs = @("-i", $IdentityFile) + $sshArgs
 }
 
 Write-Host "==> Preparando diretorio remoto ($RemotePath)..."
-$prepareCmd = "if [ -d $RemotePath ]; then cd $RemotePath && docker compose --env-file .env.staging down 2>/dev/null || true; chmod -R u+rwX $RemotePath 2>/dev/null || true; fi; rm -rf $RemotePath; mkdir -p $RemotePath"
+$prepareCmd = "if [ -d $RemotePath ]; then cd $RemotePath && if [ -r /run/inova/env ]; then docker compose --env-file /run/inova/env $composeFiles --profile staging --profile observability down 2>/dev/null || true; fi; chmod -R u+rwX $RemotePath 2>/dev/null || true; fi; rm -rf $RemotePath; mkdir -p $RemotePath"
 ssh @sshArgs $sshTarget $prepareCmd
 
 $scpArgs = @("-P", "$SshPort", "-o", "StrictHostKeyChecking=accept-new")
@@ -81,29 +88,40 @@ ssh @sshArgs $sshTarget "chmod -R a+rX $RemotePath/workers $RemotePath/runtime $
 Write-Host "==> Injetando secrets em tmpfs /run/inova (nao permanece no checkout)"
 $remoteEnv = "${sshTarget}:/tmp/inova.env"
 & scp @scpArgs ".env.staging" $remoteEnv
-$injectCmd = @"
-sudo mkdir -p /run/inova && sudo cp /tmp/inova.env /run/inova/env && sudo chown $VpsUser`:$VpsUser /run/inova /run/inova/env && sudo chmod 700 /run/inova && sudo chmod 600 /run/inova/env && rm -f /tmp/inova.env
-if ! grep -q 'sslmode=require' /run/inova/env; then
-  sed -i 's|DATABASE_URL=\(.*\)$|DATABASE_URL=\1?sslmode=require|' /run/inova/env
-fi
-grep -q '^NATS_URL=tls://' /run/inova/env || echo 'NATS_URL=tls://nats:4222' >> /run/inova/env
-grep -q '^NATS_TLS_CA=' /run/inova/env || echo 'NATS_TLS_CA=/app/deploy/tls/generated/ca.crt' >> /run/inova/env
-grep -q '^VAULT_ADDR=' /run/inova/env || echo 'VAULT_ADDR=http://vault:8200' >> /run/inova/env
-grep -q '^INOVA_SECRETS_FILE=' /run/inova/env || echo 'INOVA_SECRETS_FILE=/run/inova/env' >> /run/inova/env
-grep -q '^APP_ENV=' /run/inova/env || echo 'APP_ENV=staging' >> /run/inova/env
-"@
+$injectCmd = @'
+sudo mkdir -p /run/inova && sudo cp /tmp/inova.env /run/inova/env && sudo chown __VPS_USER__:999 /run/inova /run/inova/env && sudo chmod 750 /run/inova && sudo chmod 640 /run/inova/env && rm -f /tmp/inova.env
+db_url="$(grep '^DATABASE_URL=' /run/inova/env | cut -d= -f2-)"
+if [ -z "$db_url" ]; then echo 'DATABASE_URL ausente' >&2; exit 1; fi
+case "$db_url" in
+  *sslmode=*) db_url="$(printf '%s' "$db_url" | sed -E 's/([?&])sslmode=[^&]*/\1sslmode=require/')" ;;
+  *\?*) db_url="${db_url}&sslmode=require" ;;
+  *) db_url="${db_url}?sslmode=require" ;;
+esac
+awk -v value="$db_url" 'BEGIN { updated=0 } /^DATABASE_URL=/ { print "DATABASE_URL=" value; updated=1; next } { print } END { if (!updated) print "DATABASE_URL=" value }' /run/inova/env > /run/inova/env.tmp
+mv /run/inova/env.tmp /run/inova/env
+set_env() {
+  key="$1"; value="$2"
+  awk -v key="$key" -v value="$value" 'BEGIN { updated=0 } index($0, key "=") == 1 { if (!updated) print key "=" value; updated=1; next } { print } END { if (!updated) print key "=" value }' /run/inova/env > /run/inova/env.tmp
+  mv /run/inova/env.tmp /run/inova/env
+}
+set_env NATS_URL tls://nats:4222
+set_env NATS_TLS_CA /app/deploy/tls/generated/ca.crt
+set_env VAULT_ADDR https://vault:8200
+set_env VAULT_CACERT /app/deploy/tls/generated/ca.crt
+set_env VAULT_TOKEN_FILE /run/inova/vault_token
+set_env INOVA_SECRETS_FILE /run/inova/env
+set_env APP_ENV staging
+'@
+$injectCmd = $injectCmd.Replace("__VPS_USER__", $VpsUser)
 ssh @sshArgs $sshTarget $injectCmd
 
 if ($TlsMode -eq "cloudflare") {
   Write-Host "Modo Cloudflare: webhook em 127.0.0.1:8787 (firewall so 80/443)."
   Write-Host "Configure Cloudflare Tunnel: $Domain -> http://127.0.0.1:8787"
-  $composeFiles = "-f docker-compose.yml -f deploy/vps/docker-compose.hardening.yml -f deploy/vps/docker-compose.cloudflare.yml"
-} else {
-  $composeFiles = "-f docker-compose.yml -f deploy/vps/docker-compose.hardening.yml -f deploy/vps/docker-compose.vps.yml --profile vps"
 }
 
 Write-Host "==> Gerando TLS interno..."
-ssh @sshArgs $sshTarget "cd $RemotePath && bash deploy/tls/generate-certs.sh && (chown 999:999 deploy/tls/generated/postgres.key deploy/tls/generated/postgres.crt 2>/dev/null || sudo chown 999:999 deploy/tls/generated/postgres.key deploy/tls/generated/postgres.crt)"
+ssh @sshArgs $sshTarget "cd $RemotePath && bash deploy/tls/generate-certs.sh && sudo chown 999:999 deploy/tls/generated/postgres.key deploy/tls/generated/postgres.crt && sudo chown 100:100 deploy/tls/generated/vault.key deploy/tls/generated/vault.crt"
 
 Write-Host "==> Subindo stack (hardening)..."
 $profiles = "--profile staging --profile observability"
@@ -124,10 +142,12 @@ if ($initSql.Count -gt 0) {
 }
 
 Write-Host "==> Vault bootstrap + upload de secrets..."
-$vaultCmd = "cd $RemotePath && docker compose --env-file /run/inova/env $composeFiles $profiles up -d vault && sleep 8 && docker compose --env-file /run/inova/env $composeFiles exec -T -e VAULT_ADDR=http://127.0.0.1:8200 vault vault status || true"
+$vaultCmd = "cd $RemotePath && docker compose --env-file /run/inova/env $composeFiles $profiles up -d vault && sleep 8 && docker compose --env-file /run/inova/env $composeFiles exec -T -e VAULT_ADDR=https://127.0.0.1:8200 -e VAULT_CACERT=/vault/tls/ca.crt vault vault status || true"
 ssh @sshArgs $sshTarget $vaultCmd
-ssh @sshArgs $sshTarget "cd $RemotePath && INOVA_RUN_DIR=/run/inova VAULT_ADDR=http://127.0.0.1:8200 bash scripts/vault_bootstrap.sh deploy/vault/policies/workers.hcl"
-ssh @sshArgs $sshTarget "cd $RemotePath && VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=`$(sudo cat /run/inova/vault_root_token) docker compose --env-file /run/inova/env $composeFiles run --rm --no-deps --entrypoint python orchestrator scripts/vault_put_secrets.py --env-file /run/inova/env --addr http://vault:8200 --render /run/inova/env"
+ssh @sshArgs $sshTarget "cd $RemotePath && COMPOSE_FILE='$composeEnv' INOVA_RUN_DIR=/run/inova VAULT_ADDR=https://127.0.0.1:8200 VAULT_CACERT=$RemotePath/deploy/tls/generated/ca.crt bash scripts/vault_bootstrap.sh deploy/vault/policies/workers.hcl"
+ssh @sshArgs $sshTarget "cd $RemotePath && VAULT_TOKEN=`$(sudo cat /run/inova/vault_root_token) docker compose --env-file /run/inova/env $composeFiles run --rm --no-deps --user 0 --volume /run/inova:/run/inova:rw -e VAULT_TOKEN -e VAULT_CACERT=/app/deploy/tls/generated/ca.crt --entrypoint python orchestrator scripts/vault_put_secrets.py --env-file /run/inova/env --addr https://vault:8200"
+ssh @sshArgs $sshTarget "cd $RemotePath && docker compose --env-file /run/inova/env $composeFiles $profiles restart orchestrator audit-worker opencode-worker sonar-worker snyk-worker datadog-worker test-worker build-worker review-worker release-worker notification-worker webhook-ingress"
+ssh @sshArgs $sshTarget "sudo chown $VpsUser`:999 /run/inova /run/inova/env && sudo chmod 750 /run/inova && sudo chmod 640 /run/inova/env && sudo chown 999:999 /run/inova/vault_token && sudo chmod 400 /run/inova/vault_token"
 
 if (-not $SkipFirewall) {
   Write-Host "==> Firewall UFW (22/80/443)..."
