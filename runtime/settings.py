@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     nats_url: str = "nats://localhost:4222"
     nats_stream: str = "INOVA_TASKS"
     nats_consumer_prefix: str = "inova"
+    postgres_host_port: int = 15432
     database_url: str = (
         "postgresql://inova:inova_dev_password_change_me@localhost:5432/inova_platform"
     )

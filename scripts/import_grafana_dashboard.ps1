@@ -1,5 +1,11 @@
 param(
-  [string]$GrafanaUrl = $(if ($env:GRAFANA_URL) { $env:GRAFANA_URL } else { "http://127.0.0.1:3000" })
+  [string]$GrafanaUrl = $(if ($env:GRAFANA_URL) {
+    $env:GRAFANA_URL
+  } elseif ($env:GRAFANA_HOST_PORT) {
+    "http://127.0.0.1:$env:GRAFANA_HOST_PORT"
+  } else {
+    "http://127.0.0.1:13000"
+  })
 )
 
 $ErrorActionPreference = "Stop"

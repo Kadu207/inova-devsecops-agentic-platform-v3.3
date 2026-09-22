@@ -76,6 +76,23 @@ def test_wave7_security_workflow_defines_gitleaks_and_trivy():
     assert "aquasecurity/trivy-action" in workflow
 
 
+def test_local_compose_uses_collision_free_configurable_ports():
+    compose = Path("docker-compose.yml").read_text(encoding="utf-8")
+    expected = {
+        "NATS_HOST_PORT": "14222",
+        "NATS_MONITOR_HOST_PORT": "18222",
+        "POSTGRES_HOST_PORT": "15432",
+        "REDIS_HOST_PORT": "16379",
+        "QDRANT_HOST_PORT": "16333",
+        "MINIO_HOST_PORT": "19010",
+        "MINIO_CONSOLE_HOST_PORT": "19011",
+        "WEBHOOK_HOST_PORT": "18787",
+        "GRAFANA_HOST_PORT": "13000",
+    }
+    for variable, default in expected.items():
+        assert f"${{{variable}:-{default}}}" in compose
+
+
 def test_wave7_docs_and_hardening_overlay_exist():
     assert Path("docs/WAVE7-HARDENING.md").is_file()
     assert Path("deploy/vps/docker-compose.hardening.yml").is_file()

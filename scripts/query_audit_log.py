@@ -16,13 +16,14 @@ from runtime.settings import settings  # noqa: E402
 
 def _host_db_url() -> str:
     db_url = os.environ.get("DATABASE_URL", settings.database_url)
+    host = f"@127.0.0.1:{settings.postgres_host_port}"
     if (
         "postgres:5432" in db_url
         and "localhost" not in db_url
         and "127.0.0.1" not in db_url
     ):
-        db_url = db_url.replace("@postgres:5432", "@127.0.0.1:55432")
-    return db_url.replace("@localhost:5432", "@127.0.0.1:55432")
+        db_url = db_url.replace("@postgres:5432", host)
+    return db_url.replace("@localhost:5432", host)
 
 
 def _validate_filter(value: str, field: str) -> str:

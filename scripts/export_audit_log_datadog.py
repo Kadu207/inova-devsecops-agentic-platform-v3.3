@@ -28,12 +28,12 @@ def _in_docker() -> bool:
     return Path("/.dockerenv").exists()
 
 
-def _resolve_db_url(url: str) -> str:
-    """No host local, postgres Docker expõe 127.0.0.1:55432."""
+def _resolve_db_url(url: str, host_port: int = 15432) -> str:
+    """Resolve o Postgres Docker para a porta alternativa do host local."""
     if _in_docker():
         return url
     if "@postgres:5432" in url:
-        return url.replace("@postgres:5432", "@127.0.0.1:55432")
+        return url.replace("@postgres:5432", f"@127.0.0.1:{host_port}")
     return url
 
 
@@ -52,7 +52,10 @@ def _fetch_rows(last: int, correlation_id: str | None) -> list[tuple]:
         params.append(correlation_id)
     sql += " ORDER BY id DESC LIMIT %s"
     params.append(last)
-    db_url = _resolve_db_url(os.environ.get("DATABASE_URL", settings.database_url))
+    db_url = _resolve_db_url(
+        os.environ.get("DATABASE_URL", settings.database_url),
+        settings.postgres_host_port,
+    )
     try:
         with psycopg.connect(db_url) as conn:
             with conn.cursor() as cur:

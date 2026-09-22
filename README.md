@@ -28,6 +28,16 @@ make publish-orchestrate
 - PostgreSQL: multi-tenant, audit log (`worker_audit_log`) e DLQ (`dead_letter_events`)
 - Workers: orquestração (`task.orchestrate.requested`), auditoria, OpenCode, Sonar, Snyk, Datadog, testes, build, revisão, release e notificações
 
+### Portas locais alternativas
+
+- NATS: `14222`; monitor: `18222`
+- PostgreSQL: `15432`
+- Redis: `16379`; Qdrant: `16333`
+- MinIO: `19010`; console: `19011`
+- Webhook: `18787`; Grafana: `13000`
+
+Todas podem ser sobrescritas pelas variáveis `*_HOST_PORT` do `.env`.
+
 ## Modos de worker
 
 - **stub** (padrão local): resposta simulada sem credenciais

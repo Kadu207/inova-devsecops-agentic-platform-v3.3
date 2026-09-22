@@ -56,8 +56,10 @@ def import_dashboard(base: str, user: str, password: str, api_key: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    host_port = os.environ.get("GRAFANA_HOST_PORT", "13000")
     parser.add_argument(
-        "--url", default=os.environ.get("GRAFANA_URL", "http://127.0.0.1:3000")
+        "--url",
+        default=os.environ.get("GRAFANA_URL") or f"http://127.0.0.1:{host_port}",
     )
     parser.add_argument("--user", default=os.environ.get("GRAFANA_USER", "admin"))
     parser.add_argument(

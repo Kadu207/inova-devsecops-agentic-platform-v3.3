@@ -3,8 +3,8 @@ services:
     image: nats:2.10-alpine
     command: ["-js", "-m", "8222", "--store_dir", "/data"]
     ports:
-      - "127.0.0.1:4222:4222"
-      - "127.0.0.1:8222:8222"
+      - "127.0.0.1:${NATS_HOST_PORT:-14222}:4222"
+      - "127.0.0.1:${NATS_MONITOR_HOST_PORT:-18222}:8222"
     volumes:
       - nats_data:/data
     healthcheck:
@@ -20,7 +20,7 @@ services:
       POSTGRES_USER: inova
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inova_dev_password_change_me}
     ports:
-      - "127.0.0.1:${POSTGRES_HOST_PORT:-55432}:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/postgres:/docker-entrypoint-initdb.d:ro
@@ -33,14 +33,14 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${REDIS_HOST_PORT:-16379}:6379"
     volumes:
       - redis_data:/data
 
   qdrant:
     image: qdrant/qdrant:v1.11.0
     ports:
-      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:${QDRANT_HOST_PORT:-16333}:6333"
     volumes:
       - qdrant_data:/qdrant/storage
 
@@ -51,8 +51,8 @@ services:
       MINIO_ROOT_USER: inova
       MINIO_ROOT_PASSWORD: inova_minio_dev_change_me
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - "127.0.0.1:${MINIO_HOST_PORT:-19010}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-19011}:9001"
     volumes:
       - minio_data:/data
 
@@ -127,7 +127,7 @@ services:
     <<: *worker_base
     command: ["python", "-m", "workers.webhook_ingress.main"]
     ports:
-      - "127.0.0.1:8787:8787"
+      - "127.0.0.1:${WEBHOOK_HOST_PORT:-18787}:8787"
     profiles: ["staging"]
     env_file:
       - path: .env
@@ -139,7 +139,7 @@ services:
     image: grafana/grafana:11.2.2
     profiles: ["observability"]
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${GRAFANA_HOST_PORT:-13000}:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-inova_grafana_change_me}
